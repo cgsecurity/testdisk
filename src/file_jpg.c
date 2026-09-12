@@ -120,7 +120,10 @@ static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_
       /*@ assert 0 <= ((buffer[i+2]<<8) | buffer[i+3]) <= 0xffff; */
       const unsigned int size=((unsigned int)buffer[i+2]<<8)|buffer[i+3];
       /*@ assert size <= 0xffff; */
-      if(buffer[i+1]==0xc0)	/* SOF0 */
+      if((buffer[i+1]>=0xc0 && buffer[i+1]<=0xc3) ||
+	  (buffer[i+1]>=0xc5 && buffer[i+1]<=0xc7) ||
+	  (buffer[i+1]>=0xc9 && buffer[i+1]<=0xcb) ||
+	  (buffer[i+1]>=0xcd && buffer[i+1]<=0xcf))
       {
 	/*@ assert 0<= (buffer[i+5]<<8) <= 0xff00; */
 	/*@ assert 0 <= ((buffer[i+5]<<8) | buffer[i+6]) <= 0xffff; */
@@ -884,6 +887,9 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   /*@ assert valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new); */
   unsigned int i=2;
   time_t jpg_time=0;
+  unsigned int jpg_width=0;
+  unsigned int jpg_height=0;
+  jpg_get_size(buffer, buffer_size, &jpg_height, &jpg_width);
   /*@
     @ loop invariant \valid_read(buffer+(0..buffer_size-1));
     @ loop invariant \initialized(buffer+(0..buffer_size-1));
@@ -940,9 +946,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       0x00, 0x48, 0x00, 0x00, 0xff, 0xfe, 0x00
     };
 
-    unsigned int width=0;
-    unsigned int height=0;
-    jpg_get_size(buffer, buffer_size, &height, &width);
 #if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
     {
@@ -975,7 +978,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       /* Don't recover the thumb instead of the jpg itself */
       if(file_recovery->file_size <= 16384 &&
 	  buffer[3]==0xe0 &&
-	  width>0 && width<200 && height>0 && height<200)
+	  jpg_width>0 && jpg_width<200 && jpg_height>0 && jpg_height<200)
       {
 	if(header_ignored_adv(file_recovery, file_recovery_new)==0)
 	  return 0;
@@ -1048,6 +1051,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=i;
+  file_recovery_new->width=jpg_width;
+  file_recovery_new->height=jpg_height;
   file_recovery_new->calculated_file_size=0;
   file_recovery_new->time=jpg_time;
   file_recovery_new->extension=file_hint_jpg.extension;

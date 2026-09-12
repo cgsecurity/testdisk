@@ -342,6 +342,12 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_png.extension;
   file_recovery_new->min_filesize=16;
+  if(memcmp(&buffer[8+4], "IHDR", 4)==0)
+  {
+    const struct png_ihdr *ihdr=(const struct png_ihdr *)&buffer[16];
+    file_recovery_new->width=be32(ihdr->width);
+    file_recovery_new->height=be32(ihdr->height);
+  }
   if(file_recovery_new->blocksize < 8)
   {
     /*@ assert valid_file_recovery(file_recovery_new); */

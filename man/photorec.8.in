@@ -16,6 +16,12 @@ create a photorec.log file
 .TP
 .B /debug
 add debug information
+.TP
+.B min_file_size,bytes
+when using the command interface, reject recovered JPG and PNG files smaller than the given number of bytes
+.TP
+.B min_width,pixels, min_height,pixels, min_pixels,pixels
+when using the command interface, reject recovered JPG and PNG files below the given dimensions or total pixel count
 .SH SEE ALSO
 .BR testdisk (8),
 .BR fdisk (8).

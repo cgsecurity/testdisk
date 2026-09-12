@@ -116,6 +116,10 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
   options->mode_ext2=0;
   options->expert=0;
   options->lowmem=0;
+  options->min_file_size=0;
+  options->min_width=0;
+  options->min_height=0;
+  options->min_pixels=0;
   options->verbose=0;
   options->list_file_format=array_file_enable;
   reset_array_file_enable(options->list_file_format);
@@ -454,6 +458,21 @@ void QPhotorec::HDDlistWidget_updateUI()
       tr("Add a raw disk image..."));
 }
 
+static bool qphotorec_read_uint64(const QLineEdit *edit, uint64_t *value)
+{
+  const QString text=edit->text().trimmed();
+  bool ok=false;
+  if(text.isEmpty())
+  {
+    *value=0;
+    return true;
+  }
+  const qulonglong parsed=text.toULongLong(&ok);
+  if(ok)
+    *value=(uint64_t)parsed;
+  return ok;
+}
+
 void QPhotorec::setupUI()
 {
   QWidget *t_copy = copyright(this);
@@ -516,6 +535,59 @@ void QPhotorec::setupUI()
   groupBoxLayout->addWidget(groupBox2);
   groupBox->setLayout(groupBoxLayout);
 
+  QGroupBox *minimumImageBox = new QGroupBox(tr("Minimum recovered image"));
+  QVBoxLayout *minimumImageLayout = new QVBoxLayout;
+  QLabel *minimumImageHint = new QLabel(tr("Set any value to 0 to disable that filter. Values apply to JPG and PNG files."));
+  minimumImageHint->setWordWrap(true);
+  minimumImageLayout->addWidget(minimumImageHint);
+
+  minFileSizeEdit = new QLineEdit("0");
+  minWidthEdit = new QLineEdit("0");
+  minHeightEdit = new QLineEdit("0");
+  minPixelsEdit = new QLineEdit("0");
+  minFileSizeEdit->setToolTip(tr("Minimum recovered file size in bytes"));
+  minWidthEdit->setToolTip(tr("Minimum image width in pixels"));
+  minHeightEdit->setToolTip(tr("Minimum image height in pixels"));
+  minPixelsEdit->setToolTip(tr("Minimum width multiplied by height"));
+  minFileSizeEdit->setMaximumWidth(180);
+  minWidthEdit->setMaximumWidth(180);
+  minHeightEdit->setMaximumWidth(180);
+  minPixelsEdit->setMaximumWidth(180);
+
+  {
+    QWidget *row = new QWidget;
+    QHBoxLayout *rowLayout = new QHBoxLayout(row);
+    rowLayout->addWidget(new QLabel(tr("Minimum file size (bytes)")));
+    rowLayout->addWidget(minFileSizeEdit);
+    rowLayout->addStretch(1);
+    minimumImageLayout->addWidget(row);
+  }
+  {
+    QWidget *row = new QWidget;
+    QHBoxLayout *rowLayout = new QHBoxLayout(row);
+    rowLayout->addWidget(new QLabel(tr("Minimum width (pixels)")));
+    rowLayout->addWidget(minWidthEdit);
+    rowLayout->addStretch(1);
+    minimumImageLayout->addWidget(row);
+  }
+  {
+    QWidget *row = new QWidget;
+    QHBoxLayout *rowLayout = new QHBoxLayout(row);
+    rowLayout->addWidget(new QLabel(tr("Minimum height (pixels)")));
+    rowLayout->addWidget(minHeightEdit);
+    rowLayout->addStretch(1);
+    minimumImageLayout->addWidget(row);
+  }
+  {
+    QWidget *row = new QWidget;
+    QHBoxLayout *rowLayout = new QHBoxLayout(row);
+    rowLayout->addWidget(new QLabel(tr("Minimum total pixels")));
+    rowLayout->addWidget(minPixelsEdit);
+    rowLayout->addStretch(1);
+    minimumImageLayout->addWidget(row);
+  }
+  minimumImageBox->setLayout(minimumImageLayout);
+
 
   QLabel *dstWidget= new QLabel(tr("Please select a destination to save the recovered files to."));
   directoryLabel=new QLineEdit("");
@@ -561,6 +633,7 @@ void QPhotorec::setupUI()
   mainLayout->addWidget(HDDlistWidget);
   mainLayout->addWidget(PartListWidget);
   mainLayout->addWidget(groupBox);
+  mainLayout->addWidget(minimumImageBox);
   mainLayout->addWidget(dst_widget);
   mainLayout->addWidget(B_widget);
   this->setLayout(mainLayout);
@@ -893,6 +966,15 @@ void QPhotorec::qphotorec_search()
 {
   if(selected_disk==NULL || selected_partition==NULL)
     return;
+  if(!qphotorec_read_uint64(minFileSizeEdit, &options->min_file_size) ||
+      !qphotorec_read_uint64(minWidthEdit, &options->min_width) ||
+      !qphotorec_read_uint64(minHeightEdit, &options->min_height) ||
+      !qphotorec_read_uint64(minPixelsEdit, &options->min_pixels))
+  {
+    QMessageBox::warning(this, tr("Invalid minimum image criteria"),
+        tr("Minimum image criteria must be unsigned integer values."));
+    return;
+  }
   alloc_data_t list_search_space;
   TD_INIT_LIST_HEAD(&list_search_space.list);
 

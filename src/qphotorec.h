@@ -86,6 +86,10 @@ class QPhotorec: public QWidget
 		QRadioButton 		*qfatRadioButton;
 		QRadioButton 		*qfreeRadioButton;
 		QRadioButton 		*qwholeRadioButton;
+		QLineEdit		*minFileSizeEdit;
+		QLineEdit		*minWidthEdit;
+		QLineEdit		*minHeightEdit;
+		QLineEdit		*minPixelsEdit;
 		/* Recovery UI */
 		QLabel			*folder_txt;
 		QLabel 			*progress_info;

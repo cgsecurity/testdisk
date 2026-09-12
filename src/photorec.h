@@ -41,6 +41,10 @@ struct ph_options
   unsigned int mode_ext2;
   unsigned int expert;
   unsigned int lowmem;
+  uint64_t min_file_size;
+  uint64_t min_width;
+  uint64_t min_height;
+  uint64_t min_pixels;
   int verbose;
   file_enable_t *list_file_format;
 };
@@ -93,6 +97,12 @@ int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **c
   @*/
 int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params, 
     alloc_data_t *list_search_space);
+
+/* Apply the image filtering options to a newly detected file. */
+void file_recovery_apply_options(file_recovery_t *file_recovery, const struct ph_options *options);
+
+/* Return non-zero when the detected image dimensions do not meet the filters. */
+int file_recovery_is_below_minimum_dimensions(const file_recovery_t *file_recovery);
 
 /*@
   @ requires \valid(file_recovery);

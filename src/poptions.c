@@ -46,6 +46,7 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     @ loop assigns *current_cmd;
     @ loop assigns options->paranoid, options->keep_corrupted_file, options->mode_ext2;
     @ loop assigns options->expert, options->lowmem;
+    @ loop assigns options->min_file_size, options->min_width, options->min_height, options->min_pixels;
     @*/
   while(1)
   {
@@ -87,6 +88,25 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     {
       options->lowmem=1;
     }
+    /* Minimum recovered image criteria. Values are expressed in bytes, pixels, or pixels squared. */
+    else if(check_command(current_cmd,"min_file_size,",sizeof("min_file_size,")-1)==0 ||
+	check_command(current_cmd,"min_filesize,",sizeof("min_filesize,")-1)==0 ||
+	check_command(current_cmd,"min_size,",sizeof("min_size,")-1)==0)
+    {
+      options->min_file_size=get_int_from_command(current_cmd);
+    }
+    else if(check_command(current_cmd,"min_width,",sizeof("min_width,")-1)==0)
+    {
+      options->min_width=get_int_from_command(current_cmd);
+    }
+    else if(check_command(current_cmd,"min_height,",sizeof("min_height,")-1)==0)
+    {
+      options->min_height=get_int_from_command(current_cmd);
+    }
+    else if(check_command(current_cmd,"min_pixels,",sizeof("min_pixels,")-1)==0)
+    {
+      options->min_pixels=get_int_from_command(current_cmd);
+    }
     else
     {
 #ifndef DISABLED_FOR_FRAMAC
@@ -108,4 +128,9 @@ void interface_options_photorec_log(const struct ph_options *options)
       options->mode_ext2?"Yes":"No",
       options->expert?"Yes":"No",
       options->lowmem?"Yes":"No");
+  log_info(" Minimum image file size : %llu bytes\n Minimum image width : %llu pixels\n Minimum image height : %llu pixels\n Minimum image pixels : %llu\n",
+      (long long unsigned)options->min_file_size,
+      (long long unsigned)options->min_width,
+      (long long unsigned)options->min_height,
+      (long long unsigned)options->min_pixels);
 }

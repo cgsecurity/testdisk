@@ -115,6 +115,16 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
       return PSTATUS_OK;
   }
   file_recovery_cpy(file_recovery, file_recovery_new);
+  file_recovery_apply_options(file_recovery, options);
+  if(file_recovery_is_below_minimum_dimensions(file_recovery))
+  {
+#ifndef __FRAMAC__
+    log_info("Image at sector %lu is below the configured minimum dimensions, reject it\n",
+	(unsigned long)((file_recovery->location.start-params->partition->part_offset)/params->disk->sector_size));
+#endif
+    reset_file_recovery(file_recovery);
+    return PSTATUS_OK;
+  }
 #ifndef __FRAMAC__
   if(options->verbose > 1)
   {

@@ -72,6 +72,31 @@
 /* #define DEBUG_FREE */
 uint64_t gpfh_nbr=0;
 
+static int file_recovery_is_filtered_image(const file_recovery_t *file_recovery)
+{
+  return file_recovery->extension!=NULL &&
+    (strcmp(file_recovery->extension,"jpg")==0 ||
+     strcmp(file_recovery->extension,"png")==0);
+}
+
+void file_recovery_apply_options(file_recovery_t *file_recovery, const struct ph_options *options)
+{
+  if(options==NULL || !file_recovery_is_filtered_image(file_recovery))
+    return;
+  if(options->min_file_size > file_recovery->min_filesize)
+    file_recovery->min_filesize=options->min_file_size;
+  file_recovery->min_width=options->min_width;
+  file_recovery->min_height=options->min_height;
+  file_recovery->min_pixels=options->min_pixels;
+}
+
+int file_recovery_is_below_minimum_dimensions(const file_recovery_t *file_recovery)
+{
+  return (file_recovery->min_width>0 && file_recovery->width<file_recovery->min_width) ||
+    (file_recovery->min_height>0 && file_recovery->height<file_recovery->min_height) ||
+    (file_recovery->min_pixels>0 && file_recovery->width*file_recovery->height<file_recovery->min_pixels);
+}
+
 static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
 
 /*@
@@ -670,6 +695,19 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     file_recovery->file_size = params->disk->disk_size;
   if(file_recovery->file_size > params->disk->disk_real_size)
     file_recovery->file_size = params->disk->disk_real_size;
+  if(file_recovery->file_stat!=NULL && file_recovery_is_below_minimum_dimensions(file_recovery))
+  {
+#ifndef DISABLED_FOR_FRAMAC
+    log_info("%s Image dimensions too small ( %llux%llu, minimum %llux%llu, %llu pixels), reject it\n",
+	file_recovery->filename,
+	(long long unsigned)file_recovery->width,
+	(long long unsigned)file_recovery->height,
+	(long long unsigned)file_recovery->min_width,
+	(long long unsigned)file_recovery->min_height,
+	(long long unsigned)file_recovery->min_pixels);
+#endif
+    file_recovery->file_size=0;
+  }
   if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
       file_recovery->file_size < file_recovery->min_filesize)
   { 

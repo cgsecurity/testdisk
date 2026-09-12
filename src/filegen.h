@@ -90,6 +90,11 @@ struct file_recovery_struct
   uint64_t file_size;
   const char *extension;
   uint64_t min_filesize;
+  uint64_t width;
+  uint64_t height;
+  uint64_t min_width;
+  uint64_t min_height;
+  uint64_t min_pixels;
   uint64_t offset_ok;
   uint64_t offset_error;
   uint64_t extra;	/* extra bytes between offset_ok and offset_error */
@@ -165,6 +170,11 @@ typedef struct
 	\initialized(&file_recovery->file_check) &&
 	\initialized(&file_recovery->file_size) &&
 	\initialized(&file_recovery->min_filesize) &&
+	\initialized(&file_recovery->width) &&
+	\initialized(&file_recovery->height) &&
+	\initialized(&file_recovery->min_width) &&
+	\initialized(&file_recovery->min_height) &&
+	\initialized(&file_recovery->min_pixels) &&
 	\initialized(&file_recovery->time)
 	);
 
@@ -325,6 +335,11 @@ void file_check_size_max(file_recovery_t *file_recovery);
   ensures file_recovery->location.data==0;
   ensures file_recovery->extension==\null;
   ensures file_recovery->min_filesize==0;
+  ensures file_recovery->width==0;
+  ensures file_recovery->height==0;
+  ensures file_recovery->min_width==0;
+  ensures file_recovery->min_height==0;
+  ensures file_recovery->min_pixels==0;
   ensures file_recovery->calculated_file_size==0;
   ensures file_recovery->data_check==\null;
   ensures file_recovery->file_check==\null;
@@ -347,6 +362,11 @@ void file_check_size_max(file_recovery_t *file_recovery);
   assigns file_recovery->location.data;
   assigns file_recovery->extension;
   assigns file_recovery->min_filesize;
+  assigns file_recovery->width;
+  assigns file_recovery->height;
+  assigns file_recovery->min_width;
+  assigns file_recovery->min_height;
+  assigns file_recovery->min_pixels;
   assigns file_recovery->calculated_file_size;
   assigns file_recovery->data_check;
   assigns file_recovery->file_check;

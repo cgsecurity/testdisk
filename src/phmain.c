@@ -134,6 +134,9 @@ static void display_help(void)
       "/logjson <file> : create a log in JSON format\n" \
       "/debug          : add debug information\n" \
       "\n" \
+      "Batch mode image filters: options,min_file_size,<bytes>,min_width,<pixels>,\n" \
+      "                        min_height,<pixels>,min_pixels,<pixels>\n" \
+      "\n" \
       "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
       "in the recup_dir directory.\n");
 }
@@ -185,6 +188,10 @@ int main( int argc, char **argv )
     .mode_ext2=0,
     .expert=0,
     .lowmem=0,
+    .min_file_size=0,
+    .min_width=0,
+    .min_height=0,
+    .min_pixels=0,
     .verbose=0,
     .list_file_format=array_file_enable
   };

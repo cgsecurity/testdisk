@@ -504,7 +504,8 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #ifdef HAVE_NCURSES
 void interface_options_photorec_ncurses(struct ph_options *options)
 {
-  unsigned int menu = 5;
+  unsigned int menu = 6;
+  char minimum_image_options[160];
   struct MenuItem menuOptions[]=
   {
     { 'P', NULL, "Check JPG files" },
@@ -512,6 +513,7 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     { 'S',NULL,"Try to skip indirect block"},
     { 'E',NULL,"Provide additional controls"},
     { 'L',NULL,"Low memory"},
+    { 'M',NULL,"Set minimum image criteria"},
     { 'Q',"Quit","Return to main menu"},
     { 0, NULL, NULL }
   };
@@ -535,8 +537,15 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     menuOptions[2].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
     menuOptions[3].name=options->expert?"Expert mode : Yes":"Expert mode : No";
     menuOptions[4].name=options->lowmem?"Low memory: Yes":"Low memory: No";
+    snprintf(minimum_image_options, sizeof(minimum_image_options),
+        "Minimum image: %llux%llu, %llu pixels, %llu bytes",
+        (long long unsigned)options->min_width,
+        (long long unsigned)options->min_height,
+        (long long unsigned)options->min_pixels,
+        (long long unsigned)options->min_file_size);
+    menuOptions[5].name=minimum_image_options;
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKSELMQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'p':
@@ -561,6 +570,13 @@ void interface_options_photorec_ncurses(struct ph_options *options)
       case 'l':
       case 'L':
 	options->lowmem=!options->lowmem;
+	break;
+      case 'm':
+      case 'M':
+	options->min_file_size=ask_int_ncurses("Minimum file size in bytes (0=off)");
+	options->min_width=ask_int_ncurses("Minimum image width in pixels (0=off)");
+	options->min_height=ask_int_ncurses("Minimum image height in pixels (0=off)");
+	options->min_pixels=ask_int_ncurses("Minimum total pixels (0=off)");
 	break;
       case key_ESC:
       case 'q':
