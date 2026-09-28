@@ -21,6 +21,7 @@
  */
 #ifndef _PHOTOREC_CHECK_HEADER_H
 #define _PHOTOREC_CHECK_HEADER_H
+#include "pimage.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -115,6 +116,12 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
       return PSTATUS_OK;
   }
   file_recovery_cpy(file_recovery, file_recovery_new);
+  if(photorec_image_prepare(file_recovery, params, options, list_search_space,
+	buffer, (params->blocksize>65536 ? params->blocksize : 65536)))
+  {
+    reset_file_recovery(file_recovery);
+    return PSTATUS_OK;
+  }
 #ifndef __FRAMAC__
   if(options->verbose > 1)
   {

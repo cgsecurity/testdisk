@@ -16,6 +16,32 @@ create a photorec.log file
 .TP
 .B /debug
 add debug information
+.SH IMAGE MINIMUMS
+The Options screen provides independent minimum image width, height, total
+pixels (width times height), and recovered file size in bytes. A value of zero
+(the default) disables that minimum. An image must meet every enabled minimum;
+a value exactly equal to a minimum passes. The filters apply to JPEG and PNG
+images, and do not impose a size limit on other recovered file types. Dimension
+limits reject known below-minimum dimensions; unknown or corrupt metadata,
+or exhaustion of the bounded probe (16 MiB or 65536 markers), preserves normal
+recovery. The byte limit uses the final size determined by normal file checks.
+Where contiguous image metadata establishes a below-minimum result, the file
+is skipped before creation. Incomplete or fragmented files may require writing
+before their final size or dimensions can be checked.
+.PP
+Batch commands set the same values within the options command. For example:
+.PP
+.nf
+photorec /d recovered /cmd image.dd options,image_min_width,640,image_min_height,480,image_min_pixels,307200,image_min_bytes,10240,search
+.fi
+.PP
+Each value must be an unsigned decimal integer between 0 and
+18446744073709551615, without signs, spaces, fractions, or unit suffixes.
+Invalid or missing values stop the command before recovery starts. Interrupted
+recovery sessions save these options for the normal resume workflow.
+.PP
+QPhotoRec starts with all image minimums disabled; its graphical interface
+does not expose these settings.
 .SH SEE ALSO
 .BR testdisk (8),
 .BR fdisk (8).
