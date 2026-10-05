@@ -299,6 +299,14 @@ int session_save(const alloc_data_t *list_free_space, const struct ph_param *par
       fprintf(f_session, "expert,");
     if(options->lowmem>0)
       fprintf(f_session, "lowmem,");
+    if(options->image_min_width>0)
+      fprintf(f_session, "image_min_width,%u,", options->image_min_width);
+    if(options->image_min_height>0)
+      fprintf(f_session, "image_min_height,%u,", options->image_min_height);
+    if(options->image_min_pixels>0)
+      fprintf(f_session, "image_min_pixels,%llu,", (long long unsigned)options->image_min_pixels);
+    if(options->image_min_filesize>0)
+      fprintf(f_session, "image_min_filesize,%llu,", (long long unsigned)options->image_min_filesize);
     /* Save options - End */
     if(params->carve_free_space_only>0)
       fprintf(f_session,"freespace,");

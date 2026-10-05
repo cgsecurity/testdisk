@@ -504,7 +504,8 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #ifdef HAVE_NCURSES
 void interface_options_photorec_ncurses(struct ph_options *options)
 {
-  unsigned int menu = 5;
+  unsigned int menu = 6;
+  char image_options[128];
   struct MenuItem menuOptions[]=
   {
     { 'P', NULL, "Check JPG files" },
@@ -512,6 +513,7 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     { 'S',NULL,"Try to skip indirect block"},
     { 'E',NULL,"Provide additional controls"},
     { 'L',NULL,"Low memory"},
+    { 'I',NULL,"Set minimum dimensions or size for recovered images"},
     { 'Q',"Quit","Return to main menu"},
     { 0, NULL, NULL }
   };
@@ -535,8 +537,19 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     menuOptions[2].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
     menuOptions[3].name=options->expert?"Expert mode : Yes":"Expert mode : No";
     menuOptions[4].name=options->lowmem?"Low memory: Yes":"Low memory: No";
+    if(options->image_min_width==0 && options->image_min_height==0 &&
+	options->image_min_pixels==0 && options->image_min_filesize==0)
+      menuOptions[5].name="Image minimums : Off";
+    else
+    {
+      snprintf(image_options, sizeof(image_options), "Image minimums : %ux%u %llu px %llu bytes",
+	  options->image_min_width, options->image_min_height,
+	  (long long unsigned)options->image_min_pixels,
+	  (long long unsigned)options->image_min_filesize);
+      menuOptions[5].name=image_options;
+    }
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKSELIQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'p':
@@ -561,6 +574,15 @@ void interface_options_photorec_ncurses(struct ph_options *options)
       case 'l':
       case 'L':
 	options->lowmem=!options->lowmem;
+	break;
+      case 'i':
+      case 'I':
+	aff_copy(stdscr);
+	wmove(stdscr, INTER_OPTION_Y, INTER_OPTION_X);
+	options->image_min_width=(unsigned int)ask_number(options->image_min_width, 0, 4294967295ULL, "Minimum image width in pixels ");
+	options->image_min_height=(unsigned int)ask_number(options->image_min_height, 0, 4294967295ULL, "Minimum image height in pixels ");
+	options->image_min_pixels=ask_number(options->image_min_pixels, 0, 0, "Minimum image width*height in pixels ");
+	options->image_min_filesize=ask_number(options->image_min_filesize, 0, 0, "Minimum image file size in bytes ");
 	break;
       case key_ESC:
       case 'q':

@@ -34,6 +34,12 @@
 #include "log.h"
 #include "poptions.h"
 
+static unsigned int get_image_dimension_from_command(char **current_cmd)
+{
+  const uint64_t value=get_int_from_command(current_cmd);
+  return (value > 4294967295ULL ? 4294967295U : (unsigned int)value);
+}
+
 void interface_options_photorec_cli(struct ph_options *options, char **current_cmd)
 {
   if(*current_cmd==NULL)
@@ -46,6 +52,8 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     @ loop assigns *current_cmd;
     @ loop assigns options->paranoid, options->keep_corrupted_file, options->mode_ext2;
     @ loop assigns options->expert, options->lowmem;
+    @ loop assigns options->image_min_width, options->image_min_height;
+    @ loop assigns options->image_min_pixels, options->image_min_filesize;
     @*/
   while(1)
   {
@@ -87,6 +95,26 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     {
       options->lowmem=1;
     }
+    else if(check_command(current_cmd,"image_min_width",15)==0)
+    {
+      skip_comma_in_command(current_cmd);
+      options->image_min_width=get_image_dimension_from_command(current_cmd);
+    }
+    else if(check_command(current_cmd,"image_min_height",16)==0)
+    {
+      skip_comma_in_command(current_cmd);
+      options->image_min_height=get_image_dimension_from_command(current_cmd);
+    }
+    else if(check_command(current_cmd,"image_min_pixels",16)==0)
+    {
+      skip_comma_in_command(current_cmd);
+      options->image_min_pixels=get_int_from_command(current_cmd);
+    }
+    else if(check_command(current_cmd,"image_min_filesize",18)==0)
+    {
+      skip_comma_in_command(current_cmd);
+      options->image_min_filesize=get_int_from_command(current_cmd);
+    }
     else
     {
 #ifndef DISABLED_FOR_FRAMAC
@@ -108,4 +136,9 @@ void interface_options_photorec_log(const struct ph_options *options)
       options->mode_ext2?"Yes":"No",
       options->expert?"Yes":"No",
       options->lowmem?"Yes":"No");
+  log_info(" Image minimum width : %u\n Image minimum height : %u\n Image minimum pixels : %llu\n Image minimum filesize : %llu\n",
+      options->image_min_width,
+      options->image_min_height,
+      (long long unsigned)options->image_min_pixels,
+      (long long unsigned)options->image_min_filesize);
 }

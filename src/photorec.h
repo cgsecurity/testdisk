@@ -42,6 +42,10 @@ struct ph_options
   unsigned int expert;
   unsigned int lowmem;
   int verbose;
+  unsigned int image_min_width;
+  unsigned int image_min_height;
+  uint64_t image_min_pixels;
+  uint64_t image_min_filesize;
   file_enable_t *list_file_format;
 };
 
