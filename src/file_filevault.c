@@ -57,6 +57,8 @@ static int header_check_filevault(const unsigned char *buffer, const unsigned in
 #else
   file_recovery_new->extension=file_hint_filevault.extension;
 #endif
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

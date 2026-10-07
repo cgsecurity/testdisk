@@ -60,6 +60,8 @@ static int header_check_fh10(const unsigned char *buffer, const unsigned int buf
 #else
   file_recovery_new->extension=file_hint_fh10.extension;
 #endif
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

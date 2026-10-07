@@ -69,6 +69,8 @@ static int header_check_fp7(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="fmp12";
   else
     file_recovery_new->extension=file_hint_fp7.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

@@ -66,7 +66,6 @@ struct flv_tag
 /*@
   @ requires file_recovery->data_check==&data_check_flv;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
-  @ ensures  valid_data_check_param(buffer, buffer_size, file_recovery);
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
   @*/
@@ -114,6 +113,9 @@ static data_check_t data_check_flv(const unsigned char *buffer, const unsigned i
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_flv.extension);
+  @ ensures (\result == 1 && file_recovery_new->blocksize>=15) ==> (file_recovery_new->data_check == &data_check_flv);
+  @ ensures (\result == 1 && file_recovery_new->blocksize>=15) ==> (file_recovery_new->file_check == &file_check_size);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_flv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -124,11 +126,14 @@ static int header_check_flv(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_flv.extension;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     if(file_recovery_new->blocksize < 15)
       return 1;
     file_recovery_new->calculated_file_size=data_offset;
     file_recovery_new->data_check=&data_check_flv;
     file_recovery_new->file_check=&file_check_size;
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

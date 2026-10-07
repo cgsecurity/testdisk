@@ -109,6 +109,8 @@ static int header_check_flac(const unsigned char *buffer, const unsigned int buf
     file_recovery_new->calculated_file_size=4;
     file_recovery_new->data_check=&data_check_flac_metadata;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

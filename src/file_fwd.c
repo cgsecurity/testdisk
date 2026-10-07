@@ -51,9 +51,11 @@ const file_hint_t file_hint_fwd= {
   @*/
 static int header_check_fwd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_fwd.extension;
-    return 1;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_fwd.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
+  return 1;
 }
 
 static void register_header_check_fwd(file_stat_t *file_stat)

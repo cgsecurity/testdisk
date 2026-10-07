@@ -114,11 +114,15 @@ static int header_check_fs(const unsigned char *buffer, const unsigned int buffe
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_fs.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   if(file_recovery_new->blocksize < 0x11)
     return 1;
   file_recovery_new->data_check=&data_check_fs;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->calculated_file_size=4;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

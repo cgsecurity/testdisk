@@ -242,12 +242,15 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->extension=file_hint_fits.extension;
 #endif
   file_recovery_new->min_filesize=2880;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   if(naxis_size_max==0)
     return 1;
   /* File is composed of several 2880-bytes blocks */
   file_recovery_new->data_check=&data_check_fits;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->calculated_file_size=(i+2880-1)/2880*2880+(naxis_size_max+2880-1)/2880*2880;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }

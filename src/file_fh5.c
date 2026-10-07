@@ -84,6 +84,8 @@ static int header_check_fh5(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=datalen;
   file_recovery_new->extension=file_hint_fh5.extension;
   file_recovery_new->file_check=&file_check_fh5;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
