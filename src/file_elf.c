@@ -140,6 +140,8 @@ static int header_check_elf32_lsb(const unsigned char *buffer, const unsigned in
     if(file_recovery_new->min_filesize < tmp)
       file_recovery_new->min_filesize=tmp;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -164,6 +166,8 @@ static int header_check_elf32_msb(const unsigned char *buffer, const unsigned in
     if(file_recovery_new->min_filesize < tmp)
       file_recovery_new->min_filesize=tmp;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -188,6 +192,8 @@ static int header_check_elf64_lsb(const unsigned char *buffer, const unsigned in
     if(file_recovery_new->min_filesize < tmp)
       file_recovery_new->min_filesize=tmp;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -212,6 +218,8 @@ static int header_check_elf64_msb(const unsigned char *buffer, const unsigned in
     if(file_recovery_new->min_filesize < tmp)
       file_recovery_new->min_filesize=tmp;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

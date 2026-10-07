@@ -47,6 +47,34 @@ const file_hint_t file_hint_ext2_sb= {
 };
 
 /*@
+  @ requires valid_read_string(filename);
+  @ requires \valid(buffer + (0 .. 1023));
+  @ requires \separated(filename, buffer+(..), &errno, &Frama_C_entropy_source);
+  @ ensures \result == 0 ==> \initialized(buffer + (0 .. 1023));
+  @ assigns buffer[0 .. 1023];
+  @ assigns errno;
+  @ assigns Frama_C_entropy_source;
+  @*/
+
+static int file_rename_ext_aux(const char * filename, unsigned char *buffer)
+{
+  FILE *file;
+  int buffer_size;
+  if((file=fopen(filename, "rb"))==NULL)
+    return 1;
+  buffer_size=fread(buffer, 1, 1024, file);
+  fclose(file);
+  if(buffer_size!=1024)
+    return 1;
+  /*@ assert buffer_size == 1024; */
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, 1024);
+#endif
+  /*@ assert \initialized(buffer + (0 .. 1023)); */
+  return 0;
+}
+
+/*@
   @ requires file_recovery->file_rename==&file_rename_ext;
   @ requires valid_file_rename_param(file_recovery);
   @ ensures  valid_file_rename_result(file_recovery);
@@ -55,20 +83,10 @@ static void file_rename_ext(file_recovery_t *file_recovery)
 {
   unsigned char buffer[1024];
   char buffer_cluster[32];
-  FILE *file;
   const struct ext2_super_block *sb=(const struct ext2_super_block *)&buffer;
-  int buffer_size;
   unsigned long int block_nr;
-  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+  if(file_rename_ext_aux(file_recovery->filename, buffer))
     return;
-  buffer_size=fread(buffer, 1, sizeof(buffer), file);
-  fclose(file);
-  if(buffer_size!=sizeof(buffer))
-    return;
-  /*@ assert buffer_size == sizeof(buffer); */
-#if defined(__FRAMAC__)
-  Frama_C_make_unknown(buffer, sizeof(buffer));
-#endif
   /*@ assert \initialized(buffer + (0 .. sizeof(buffer)-1)); */
   block_nr=(unsigned long int)le32(sb->s_first_data_block) + (unsigned long int)le16(sb->s_block_group_nr)*le32(sb->s_blocks_per_group);
   sprintf(buffer_cluster, "sb_%lu", block_nr);
@@ -97,6 +115,10 @@ static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int 
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_ext;
+  /*@ assert file_recovery_new->file_stat == \null; */
+  /*@ assert file_recovery_new->handle == \null; */
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -114,28 +136,47 @@ static data_check_t data_check_extdir(const unsigned char *buffer, const unsigne
 }
 
 /*@
+  @ requires valid_read_string(filename);
+  @ requires \valid(buffer + (0 .. 511));
+  @ requires \separated(filename, buffer+(..));
+  @ ensures \result == 0 ==> \initialized(buffer + (0 .. 511));
+  @ assigns buffer[0 .. 511];
+  @ assigns errno;
+  @*/
+static int file_rename_extdir_aux(const char *filename, unsigned char *buffer)
+{
+  FILE *file;
+  int buffer_size;
+  if((file=fopen(filename, "rb"))==NULL)
+  {
+    return 1;
+  }
+  buffer_size=fread(buffer, 1, 512, file);
+  fclose(file);
+  if(buffer_size!=512)
+    return 1;
+  /*@ assert buffer_size == 512; */
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, 512);
+#endif
+  return 0;
+}
+
+/*@
   @ requires valid_file_rename_param(file_recovery);
   @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_extdir(file_recovery_t *file_recovery)
 {
-  unsigned char buffer[512];
+  char buffer[512];
   char buffer_cluster[32];
-  FILE *file;
-  int buffer_size;
   const uint32_t *inode=(const uint32_t *)&buffer[0];
-  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+  unsigned int inode_nbr;
+  if(file_rename_extdir_aux(file_recovery->filename, buffer))
     return;
-  buffer_size=fread(buffer, 1, sizeof(buffer), file);
-  fclose(file);
-  if(buffer_size!=sizeof(buffer))
-    return;
-  /*@ assert buffer_size == sizeof(buffer); */
-#if defined(__FRAMAC__)
-  Frama_C_make_unknown(buffer, sizeof(buffer));
-#endif
   /*@ assert \initialized(buffer + (0 .. sizeof(buffer)-1)); */
-  sprintf(buffer_cluster, "inode_%u", (unsigned int)le32(*inode));
+  inode_nbr=le32(*inode);
+  sprintf(buffer_cluster, "inode_%u", inode_nbr);
 #if defined(DISABLED_FOR_FRAMAC)
   buffer_cluster[sizeof(buffer_cluster)-1]='\0';
 #endif
@@ -159,6 +200,7 @@ static int header_check_ext2_dir(const unsigned char *buffer, const unsigned int
   file_recovery_new->data_check=&data_check_extdir;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_extdir;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }

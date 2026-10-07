@@ -95,6 +95,8 @@ static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int
   file_recovery_new->calculated_file_size=unencrypted_file_size;
   file_recovery_new->data_check=NULL;
   file_recovery_new->file_check=&file_check_ecryptfs;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

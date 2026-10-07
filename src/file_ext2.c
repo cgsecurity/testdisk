@@ -71,6 +71,8 @@ static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int 
   file_recovery_new->calculated_file_size=(uint64_t)le32(sb->s_blocks_count)*(EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

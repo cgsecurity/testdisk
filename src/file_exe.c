@@ -355,6 +355,7 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires \valid_read(rsrc_entry);
+  @ terminates \true;
   @*/
 static int pe_resource_language_aux(FILE *file, const unsigned int base, const struct pe_image_section_hdr *pe_sections, const unsigned int nbr_sections, file_recovery_t *file_recovery, const struct rsrc_entries_s *rsrc_entry)
 {
@@ -474,6 +475,7 @@ static void pe_resource_language(FILE *file, const unsigned int base, const unsi
   @ requires \valid_read(pe_sections);
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires \separated(file, pe_sections+(..), file_recovery);
   @*/
 static void pe_resource_id(FILE *file, const unsigned int base, const unsigned int dir_start, const struct pe_image_section_hdr *pe_sections, const unsigned int nbr_sections, file_recovery_t *file_recovery)
 {
@@ -752,6 +754,75 @@ static void file_rename_pe_exe(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ assigns  *file_recovery_new;
   @*/
+static int header_check_msdos_exe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct dos_image_file_hdr *dos_hdr=(const struct dos_image_file_hdr*)buffer;
+  if(le16(dos_hdr->bytes_in_last_block) <= 512 &&
+      le16(dos_hdr->blocks_in_file) > 0 &&
+      le16(dos_hdr->min_extra_paragraphs) <= le16(dos_hdr->max_extra_paragraphs)
+    )
+  {
+    /* MSDOS EXE */
+    uint64_t coff_offset=le16(dos_hdr->blocks_in_file)*512;
+    if(le16(dos_hdr->bytes_in_last_block))
+      coff_offset-=512-le16(dos_hdr->bytes_in_last_block);
+
+    if(coff_offset < buffer_size-1 &&
+	buffer[coff_offset]==0x4c && buffer[coff_offset+1]==0x01)
+    { /*  COFF_I386MAGIC */
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_exe.extension;
+      file_recovery_new->min_filesize=coff_offset+2;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
+      return 1;
+    }
+#ifdef DEBUG_EXE
+    {
+      const struct exe_reloc *exe_relocs;
+      const unsigned int reloc_table_offset=le16(dos_hdr->reloc_table_offset);
+      const unsigned int num_relocs=le16(dos_hdr->num_relocs);
+      log_info("Maybe a DOS EXE\n");
+      log_info("blocks %llu\n", (long long unsigned)coff_offset);
+      log_info("data start %llx\n", (long long unsigned)16*le16(dos_hdr->header_paragraphs));
+      log_info("reloc %u\n", num_relocs);
+      if(reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size)
+      {
+	unsigned int i;
+	/*@ assert reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size; */
+	exe_relocs=(const struct exe_reloc *)(buffer+reloc_table_offset);
+	/*@ assert \valid_read(exe_relocs + (0 .. num_relocs-1)); */
+	/*@
+	  @ loop invariant 0 <= i <= num_relocs;
+	  @ loop variant num_relocs -i;
+	  @ */
+	for(i=0; i < num_relocs; i++)
+	{
+	  /*@ assert 0 <= i <= num_relocs; */
+	  const struct exe_reloc *exe_reloc=&exe_relocs[i];
+	  /*@ assert \valid_read(exe_reloc); */
+	  log_info("offset %x, segment %x\n",
+	      le16(exe_reloc->offset), le16(exe_reloc->segment));
+	}
+      }
+    }
+#endif
+  }
+  return 0;
+}
+
+/*@
+  @ requires buffer_size >= 2;
+  @ requires separation: \separated(&file_hint_exe, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_exe.extension || file_recovery_new->extension == extension_dll);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || file_recovery_new->data_check == &data_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || file_recovery_new->file_rename == &file_rename_pe_exe);
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_exe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct dos_image_file_hdr *dos_hdr=(const struct dos_image_file_hdr*)buffer;
@@ -767,6 +838,8 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_exe.extension;
       file_recovery_new->min_filesize=le32(dos_hdr->e_lfanew) + sizeof(struct pe_image_file_hdr);
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if((le32(pe_hdr->Magic) & 0xffff) == IMAGE_NT_SIGNATURE)
@@ -790,6 +863,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
 #endif
 	return 0;
       }
+      /*@ assert valid_file_recovery(file_recovery_new); */
       file_recovery_new->time=le32(pe_hdr->TimeDateStamp);
 #ifdef DEBUG_EXE
       {
@@ -819,6 +893,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
 	const struct pe_image_section_hdr *pe_image_section=(const struct pe_image_section_hdr*)
 	  ((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader));
 	/*@
+	  @ loop invariant valid_file_recovery(file_recovery_new);
 	  @ loop assigns i, pe_image_section, sum;
 	  @ loop variant le16(pe_hdr->NumberOfSections) - i;
 	  @*/
@@ -876,59 +951,12 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->file_rename=&file_rename_pe_exe;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
   }
-  if(le16(dos_hdr->bytes_in_last_block) <= 512 &&
-      le16(dos_hdr->blocks_in_file) > 0 &&
-      le16(dos_hdr->min_extra_paragraphs) <= le16(dos_hdr->max_extra_paragraphs)
-    )
-  {
-    /* MSDOS EXE */
-    uint64_t coff_offset=le16(dos_hdr->blocks_in_file)*512;
-    if(le16(dos_hdr->bytes_in_last_block))
-      coff_offset-=512-le16(dos_hdr->bytes_in_last_block);
-
-    if(coff_offset < buffer_size-1 &&
-	buffer[coff_offset]==0x4c && buffer[coff_offset+1]==0x01)
-    { /*  COFF_I386MAGIC */
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->extension=file_hint_exe.extension;
-      file_recovery_new->min_filesize=coff_offset+2;
-      return 1;
-    }
-#ifdef DEBUG_EXE
-    {
-      const struct exe_reloc *exe_relocs;
-      const unsigned int reloc_table_offset=le16(dos_hdr->reloc_table_offset);
-      const unsigned int num_relocs=le16(dos_hdr->num_relocs);
-      log_info("Maybe a DOS EXE\n");
-      log_info("blocks %llu\n", (long long unsigned)coff_offset);
-      log_info("data start %llx\n", (long long unsigned)16*le16(dos_hdr->header_paragraphs));
-      log_info("reloc %u\n", num_relocs);
-      if(reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size)
-      {
-	unsigned int i;
-	/*@ assert reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size; */
-	exe_relocs=(const struct exe_reloc *)(buffer+reloc_table_offset);
-	/*@ assert \valid_read(exe_relocs + (0 .. num_relocs-1)); */
-	/*@
-	  @ loop invariant 0 <= i <= num_relocs;
-	  @ loop variant num_relocs -i;
-	  @ */
-	for(i=0; i < num_relocs; i++)
-	{
-	  /*@ assert 0 <= i <= num_relocs; */
-	  const struct exe_reloc *exe_reloc=&exe_relocs[i];
-	  /*@ assert \valid_read(exe_reloc); */
-	  log_info("offset %x, segment %x\n",
-	      le16(exe_reloc->offset), le16(exe_reloc->segment));
-	}
-      }
-    }
-#endif
-  }
-  return 0;
+  return header_check_msdos_exe(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
 }
 
 static void register_header_check_exe(file_stat_t *file_stat)

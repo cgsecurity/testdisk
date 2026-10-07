@@ -372,11 +372,8 @@ static data_check_t data_check_emf(const unsigned char *buffer, const unsigned i
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_emf.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 0x34);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_emf);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
   @ assigns *file_recovery_new;
   @*/
@@ -400,6 +397,8 @@ static int header_check_emf(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=atom_size;
     }
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

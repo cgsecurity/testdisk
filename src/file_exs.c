@@ -76,6 +76,8 @@ static int header_check_exs(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_exs.extension;
   file_recovery_new->file_rename=&file_rename_exs;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
