@@ -62,7 +62,7 @@ int ask_testdisk_log_creation(void)
   wprintw(stdscr,"testdisk.log");
   if(has_colors())
     wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-  wprintw(stdscr," , it");
+  wprintw(stdscr,", it");
   wmove(stdscr,12,0);
   wprintw(stdscr,"will contain TestDisk options, technical information and various");
   wmove(stdscr,13,0);
