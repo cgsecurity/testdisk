@@ -98,10 +98,12 @@ pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const st
   }
   else
   {
-    wprintw(window,"Pass %u - Reading sector %10llu/%llu, ",
+    wprintw(window,"Pass %u - Reading sector %10llu/%llu (%llu.%llu%%), ",
 	pass,
 	(unsigned long long)((offset-partition->part_offset)/sector_size),
-	(unsigned long long)(partition->part_size/sector_size));
+	(unsigned long long)(partition->part_size/sector_size),
+	(unsigned long long)((offset-partition->part_offset)*100/partition->part_size),
+	(unsigned long long)((offset-partition->part_offset)*1000/partition->part_size%10));
   }
   if(params->status==STATUS_FIND_OFFSET)
     wprintw(window,"%u/10 headers found\n", params->file_nbr);
@@ -130,6 +132,10 @@ pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const st
   json_log_progress(params, pass, offset);
 
   wrefresh(window);
-  return(check_enter_key_or_s(window)==0?PSTATUS_OK:PSTATUS_STOP);
+  {
+    const int key=check_enter_key_or_s(window);
+    if(key==3) return PSTATUS_SKIP;
+    return (key==0?PSTATUS_OK:PSTATUS_STOP);
+  }
 }
 #endif
