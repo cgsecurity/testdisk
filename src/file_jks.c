@@ -67,6 +67,8 @@ static int header_check_jks(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_jks.extension;
   file_recovery_new->min_filesize=sizeof(struct jks_header)+4+2+8;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

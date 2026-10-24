@@ -66,6 +66,8 @@ static int header_check_ifo(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=((uint64_t)be32(hdr->ls_IFO)+1)*2048;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

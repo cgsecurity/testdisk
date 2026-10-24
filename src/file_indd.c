@@ -169,6 +169,8 @@ static int header_check_indd(const unsigned char *buffer, const unsigned int buf
 #ifdef DEBUG_INDD
   log_info("header_check_indd: Guessed length: %llu.\n", (long long unsigned)file_recovery_new->calculated_file_size);
 #endif
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

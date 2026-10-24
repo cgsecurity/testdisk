@@ -86,6 +86,8 @@ static int header_check_idx(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension=file_hint_idx.extension;
   file_recovery_new->data_check=&data_check_idx;
   file_recovery_new->min_filesize=0x30;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

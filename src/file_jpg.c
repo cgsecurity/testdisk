@@ -1055,6 +1055,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   if(buffer_size >= 4)
     file_recovery_new->data_check=&data_check_jpg;
   /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
