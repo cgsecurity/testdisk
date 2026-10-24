@@ -56,6 +56,8 @@ static int header_check_maxis(const unsigned char *buffer, const unsigned int bu
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_maxis.extension;
   file_recovery_new->min_filesize=0x60;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

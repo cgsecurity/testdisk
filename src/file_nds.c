@@ -78,6 +78,8 @@ static int header_check_nds(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension=file_hint_nds.extension;
   file_recovery_new->min_filesize=0x180;
   file_recovery_new->file_rename=&file_rename_nds;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

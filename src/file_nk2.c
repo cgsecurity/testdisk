@@ -37,6 +37,8 @@
   @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_nk2(file_stat_t *file_stat);
+
+static void file_check_nk2(file_recovery_t *fr);
 #define NK2_MAX_FILESIZE 100*1024*1024
 
 const file_hint_t file_hint_nk2= {
@@ -89,7 +91,9 @@ typedef struct {
 #define	PT_BINARY	0x0102
 
 /*@
+  @ requires fr->file_check == &file_check_nk2;
   @ requires valid_file_check_param(fr);
+  @ requires \separated(fr, fr->handle, &__fc_errno, &Frama_C_entropy_source);
   @ ensures  valid_file_check_result(fr);
   @ assigns *fr->handle, errno, fr->file_size, fr->offset_error;
   @ assigns Frama_C_entropy_source;
@@ -98,6 +102,7 @@ static void file_check_nk2_aux(file_recovery_t *fr, const unsigned int entries_c
 {
   unsigned int j;
   /*@
+    @ loop invariant valid_file_check_result(fr);
     @ loop assigns *fr->handle, errno, fr->file_size, fr->offset_error;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns j;
@@ -220,6 +225,7 @@ static void file_check_nk2(file_recovery_t *fr)
     @ loop assigns *fr->handle, errno, fr->file_size, fr->offset_error;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns i;
+    @ loop variant le32(nk2h->items_count) - i;
     @*/
   for(i=0; i<le32(nk2h->items_count); i++)
   {
@@ -264,6 +270,8 @@ static int header_check_nk2(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_nk2.extension;
   file_recovery_new->file_check=&file_check_nk2;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

@@ -99,6 +99,7 @@ static int header_check_mrw(const unsigned char *buffer, const unsigned int buff
      be16(prd->ccd.x), be16(prd->ccd.y), prd->datasize);
      log_debug("mrw_file_size %lu\n", (long unsigned)file_recovery_new->calculated_file_size);
      */
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   return 1;
 }
 

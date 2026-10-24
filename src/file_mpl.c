@@ -53,6 +53,7 @@ static int header_check_mpl(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mpl.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   return 1;
 }
 

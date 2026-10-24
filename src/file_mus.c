@@ -68,6 +68,7 @@ static int header_check_mus(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->min_filesize = 18;
   file_recovery_new->file_check = &file_check_mus;
   file_recovery_new->extension = file_hint_mus.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   return 1;
 }
 

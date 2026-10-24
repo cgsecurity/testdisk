@@ -185,10 +185,12 @@ static int header_mpg_found(file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mpg.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   if(file_recovery_new->blocksize < 14)
     return 1;
   file_recovery_new->data_check=&data_check_mpg;
   file_recovery_new->file_check=&file_check_size;
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

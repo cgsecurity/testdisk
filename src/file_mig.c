@@ -76,6 +76,7 @@ static void file_check_mig(file_recovery_t *file_recovery)
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns offset;
+    @ loop variant PHOTOREC_MAX_FILE_SIZE - offset;
     @*/
   while(1)
   {
@@ -127,6 +128,8 @@ static int header_check_mig(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mig.extension;
   file_recovery_new->file_check=&file_check_mig;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

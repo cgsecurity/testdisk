@@ -45,6 +45,19 @@ const file_hint_t file_hint_mat= {
 
 /*@
   @ requires buffer_size >= 0x80;
+  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ assigns \result;
+  @*/
+static int header_check_mat_aux(const unsigned char *buffer, const unsigned int buffer_size)
+{
+  const unsigned char mat_le[4]={0x00, 0x01, 'I', 'M'};
+  const unsigned char mat_be[4]={0x01, 0x00, 'M', 'I'};
+  return (memcmp(&buffer[0x7c], mat_le, sizeof(mat_le))==0 ||
+     memcmp(&buffer[0x7c], mat_be, sizeof(mat_be))==0);
+}
+
+/*@
+  @ requires buffer_size >= 0x80;
   @ requires separation: \separated(&file_hint_mat, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -52,13 +65,12 @@ const file_hint_t file_hint_mat= {
   @*/
 static int header_check_mat(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const unsigned char mat_le[4]={0x00, 0x01, 'I', 'M'};
-  const unsigned char mat_be[4]={0x01, 0x00, 'M', 'I'};
-  if(memcmp(&buffer[0x7c], mat_le, sizeof(mat_le))==0 ||
-     memcmp(&buffer[0x7c], mat_be, sizeof(mat_be))==0)
+  if(header_check_mat_aux(buffer, buffer_size))
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mat.extension;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

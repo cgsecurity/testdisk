@@ -56,10 +56,13 @@ static void file_rename_mft(file_recovery_t *file_recovery)
   FILE *file;
   int buffer_size;
   const struct ntfs_mft_record *record=(const struct ntfs_mft_record *)&buffer;
+  /*@ assert valid_read_string((const char *)file_recovery->filename); */
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
+  /*@ assert valid_read_string((const char *)file_recovery->filename); */
+  /*@ assert valid_file_recovery(file_recovery); */
   if(buffer_size<54)
     return;
 #if defined(__FRAMAC__)
@@ -71,6 +74,8 @@ static void file_rename_mft(file_recovery_t *file_recovery)
   buffer_cluster[sizeof(buffer_cluster)-1]='\0';
 #endif
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
+  /*@ assert valid_read_string((const char *)file_recovery->filename); */
+  /*@ assert valid_file_recovery(file_recovery); */
 }
 
 /*@
@@ -101,6 +106,8 @@ static int header_check_mft(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_mft;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

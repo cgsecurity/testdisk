@@ -56,6 +56,7 @@ static int header_check_myisam(const unsigned char *buffer, const unsigned int b
   /* MySQL MYISAM compressed data file Version 1 */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="MYI";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   return 1;
 }
 
@@ -73,6 +74,7 @@ static int header_check_mysql(const unsigned char *buffer, const unsigned int bu
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="frm";
+    /*@ assert valid_read_string(file_recovery_new->extension); */
     return 1;
   }
   return 0;

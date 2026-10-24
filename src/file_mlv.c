@@ -216,6 +216,8 @@ static int header_check_mlv(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->file_rename=&file_rename_mlv;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   if(le16(hdr->fileNum) > le16(hdr->fileCount))
@@ -227,6 +229,8 @@ static int header_check_mlv(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->file_check=&file_check_mlv;
   if(file_recovery_new->blocksize > 0x10)
     file_recovery_new->data_check=&data_check_mlv;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

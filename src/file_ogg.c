@@ -101,23 +101,14 @@ static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned i
 
 /*@
   @ requires buffer_size >= 0x78+7;
-  @ requires separation: \separated(&file_hint_ogg, buffer+(..), file_recovery, file_recovery_new);
-  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery_new);
+  @ requires separation: \separated(&file_hint_ogg, buffer+(..), file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @*/
-static int header_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_ogg_aux(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery_new)
 {
   static const unsigned char sign_theora[7]= {0x80, 't', 'h', 'e', 'o', 'r', 'a'};
-  /* http://en.wikipedia.org/wiki/Ogg#File_format */
-  /* Return if not Beginning Of Stream and already saving the file */
-  if((buffer[5]&0x02)!=0x02 &&
-      file_recovery->file_stat!=NULL &&
-      file_recovery->file_check!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_ogg)
-  {
-    header_ignored(file_recovery_new);
-    return 0;
-  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->calculated_file_size=0;
   if(file_recovery_new->blocksize > 27+255)
@@ -132,7 +123,30 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="ogv";
   else
     file_recovery_new->extension=file_hint_ogg.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
+}
+
+/*@
+  @ requires buffer_size >= 0x78+7;
+  @ requires separation: \separated(&file_hint_ogg, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @*/
+static int header_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* http://en.wikipedia.org/wiki/Ogg#File_format */
+  /* Return if not Beginning Of Stream and already saving the file */
+  if((buffer[5]&0x02)!=0x02 &&
+      file_recovery->file_stat!=NULL &&
+      file_recovery->file_check!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_ogg)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
+  return header_check_ogg_aux(buffer, buffer_size, file_recovery_new);
 }
 
 static void register_header_check_ogg(file_stat_t *file_stat)

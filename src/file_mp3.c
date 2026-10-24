@@ -485,6 +485,8 @@ static int header_check_id3(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_id3;
     file_recovery_new->extension=file_hint_mp3.extension;
     file_recovery_new->file_check=&file_check_size;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;
@@ -616,6 +618,8 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_mp3;
     file_recovery_new->file_check=&file_check_size;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

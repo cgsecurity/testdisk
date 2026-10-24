@@ -279,6 +279,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
       file_recovery_new->file_rename=&file_rename_mov;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       if(file_recovery_new->blocksize < 16)
       {
 	file_recovery_new->min_filesize=calculated_file_size;
@@ -287,6 +289,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
       file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=calculated_file_size;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e')
@@ -297,14 +301,17 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
       file_recovery_new->file_rename=&file_rename_mov;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
       if(file_recovery_new->blocksize < 16)
       {
 	file_recovery_new->min_filesize=calculated_file_size;
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=calculated_file_size;
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v')
@@ -315,6 +322,7 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
       file_recovery_new->file_rename=&file_rename_mov;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
       if(file_recovery_new->blocksize < 16)
       {
 	file_recovery_new->min_filesize=calculated_file_size;
@@ -331,6 +339,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=calculated_file_size;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p')
@@ -348,14 +358,17 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=extension_mp4;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
 	if(file_recovery->blocksize < 16)
 	{
 	  file_recovery_new->min_filesize=calculated_file_size;
+	  /*@ assert valid_file_recovery(file_recovery_new); */
 	  return 1;
 	}
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=calculated_file_size;
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "M4A ", 4)==0)
@@ -370,6 +383,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=calculated_file_size;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "3gp", 3)==0)
@@ -385,6 +400,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=calculated_file_size;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "3g2", 3)==0)
@@ -400,6 +417,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=calculated_file_size;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "heic", 4)==0)
@@ -414,6 +433,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=calculated_file_size;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "jp2 ", 4)==0)
@@ -422,6 +443,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->extension=extension_jp2;
 	file_recovery_new->min_filesize=calculated_file_size;
 	/* jP + ftyp "jp2 " + jp2h + jp2c (atom_size=0) => no data check */
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "qt  ", 4)==0)
@@ -437,6 +460,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=calculated_file_size;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "crx ", 4)==0)
@@ -451,6 +476,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=calculated_file_size;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
     }
@@ -476,6 +503,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
       file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=calculated_file_size;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(atom_size > buffer_size)

@@ -64,6 +64,8 @@ static int header_check_luks(const unsigned char *buffer, const unsigned int buf
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_luks.extension;
   file_recovery_new->min_filesize=512;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

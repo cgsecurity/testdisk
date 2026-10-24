@@ -76,6 +76,8 @@ static int header_check_mobi(const unsigned char *buffer, const unsigned int buf
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mobi.extension;
   file_recovery_new->file_check=&file_check_mobi;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

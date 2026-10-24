@@ -150,6 +150,52 @@ static void file_rename_ts_192(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= 0xe8 + 4;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery_new);
+  @ requires separation: \separated(&file_hint_m2ts, buffer+(..), file_recovery_new);
+  @ ensures  \result == 1;
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
+static int header_m2ts(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  if( memcmp(&buffer[0xd7], &buffer[0xe8], 4)==0)
+  {
+    if( memcmp(&buffer[0xd7], hdmv_header, sizeof(hdmv_header))==0 ||
+	memcmp(&buffer[0xd7], hdpr_header, sizeof(hdpr_header))==0)
+    {
+#ifdef DJGPP
+      file_recovery_new->extension="m2t";
+#else
+      file_recovery_new->extension=file_hint_m2ts.extension;
+#endif
+    }
+    else if( memcmp(&buffer[0xd7], sdvs_header, sizeof(sdvs_header))==0)
+      file_recovery_new->extension="tod";
+    else
+      file_recovery_new->extension="ts";
+  }
+  else
+    file_recovery_new->extension="ts";
+  file_recovery_new->file_rename=&file_rename_ts_192;
+  file_recovery_new->min_filesize=192;
+  if(file_recovery_new->blocksize < 5)
+  {
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
+    return 1;
+  }
+  file_recovery_new->calculated_file_size=0;
+  file_recovery_new->data_check=&data_check_ts_192;
+  file_recovery_new->file_check=&file_check_size_max;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
+  return 1;
+}
+
+/*@
+  @ requires buffer_size >= 0xe8 + 4;
   @ requires separation: \separated(&file_hint_m2ts, &file_hint_ts, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -174,33 +220,7 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
     header_ignored(file_recovery_new);
     return 0;
   }
-  reset_file_recovery(file_recovery_new);
-  if( memcmp(&buffer[0xd7], &buffer[0xe8], 4)==0)
-  {
-    if( memcmp(&buffer[0xd7], hdmv_header, sizeof(hdmv_header))==0 ||
-	memcmp(&buffer[0xd7], hdpr_header, sizeof(hdpr_header))==0)
-    {
-#ifdef DJGPP
-      file_recovery_new->extension="m2t";
-#else
-      file_recovery_new->extension=file_hint_m2ts.extension;
-#endif
-    }
-    else if( memcmp(&buffer[0xd7], sdvs_header, sizeof(sdvs_header))==0)
-      file_recovery_new->extension="tod";
-    else
-      file_recovery_new->extension="ts";
-  }
-  else
-    file_recovery_new->extension="ts";
-  file_recovery_new->file_rename=&file_rename_ts_192;
-  file_recovery_new->min_filesize=192;
-  if(file_recovery_new->blocksize < 5)
-    return 1;
-  file_recovery_new->calculated_file_size=0;
-  file_recovery_new->data_check=&data_check_ts_192;
-  file_recovery_new->file_check=&file_check_size_max;
-  return 1;
+  return header_m2ts(buffer, buffer_size, file_recovery_new);
 }
 
 /*@
@@ -262,6 +282,8 @@ static int header_check_m2t(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_ts_188;
   file_recovery_new->file_check=&file_check_size_max;
   file_recovery_new->file_rename=&file_rename_ts_188;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

@@ -185,6 +185,22 @@ static int EBML_read_string(const unsigned char *p, const unsigned int p_size, u
 static const unsigned char EBML_header[4]= { 0x1a,0x45,0xdf,0xa3};
 
 /*@
+  @ requires \valid_read(s + (0 .. strlength-1));
+  @ ensures valid_read_string(\result);
+  @ assigns \result;
+  @*/
+const char *signature_to_extension(const char *s, const size_t strlength)
+{
+  if( (strlength == 8 && memcmp(s,"matroska", 8)==0) ||
+      (strlength == 9 && memcmp(s,"matroska", 9)==0))
+    return file_hint_mkv.extension;
+  else if((strlength == 4 && memcmp(s,"webm", 4)==0) ||
+      (    strlength == 5 && memcmp(s,"webm", 5)==0))
+    return "webm";
+  return "ebml";
+}
+
+/*@
   @ requires separation: \separated(&file_hint_mkv, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -252,14 +268,7 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
     if (bytes < 0)
       return 0;
     reset_file_recovery(file_recovery_new);
-    if( (strlength == 8 && memcmp(p+bytes,"matroska", 8)==0) ||
-	(strlength == 9 && memcmp(p+bytes,"matroska", 9)==0))
-      file_recovery_new->extension=file_hint_mkv.extension;
-    else if((strlength == 4 && memcmp(p+bytes,"webm", 4)==0) ||
-	(    strlength == 5 && memcmp(p+bytes,"webm", 5)==0))
-      file_recovery_new->extension="webm";
-    else
-      file_recovery_new->extension="ebml";
+    file_recovery_new->extension=signature_to_extension(p+bytes, strlength);
     if(segment_size > 0)
     {
       file_recovery_new->calculated_file_size = segment_data_offset + segment_size;
@@ -268,8 +277,12 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
 #endif
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
+      /*@ assert file_recovery_new->data_check == &data_check_size; */
+      /*@ assert  file_recovery_new->file_check == &file_check_size; */
     }
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

@@ -146,6 +146,8 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=file_hint_lzh.extension;
 	file_recovery_new->file_rename=&file_rename_level0;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       /* Level 1 */
@@ -156,6 +158,8 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
 	  return 0;
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=file_hint_lzh.extension;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
       /* Level 2 */
@@ -164,6 +168,8 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
 	//	const struct lzh_level2 *hdr=(const struct lzh_level2 *)buffer;
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=file_hint_lzh.extension;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       }
   }
