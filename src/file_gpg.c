@@ -89,8 +89,15 @@ static const unsigned char pgp_header[5]= {0xa8, 0x03, 'P', 'G', 'P'};
 
 /*@
   @ terminates \true;
-  @ ensures 0 <= \result <= 0x3f;
   @ assigns \nothing;
+  @ behavior bit_not_set:
+  @	assumes (buf&0x80)==0;
+  @ 	ensures \result == 0;
+  @ behavior bit_set:
+  @	assumes (buf&0x80)!=0;
+  @ 	ensures 0 <= \result <= 0x3f;
+  @ complete behaviors;
+  @ disjoint behaviors;
   @*/
 static unsigned int openpgp_packet_tag(const unsigned char buf)
 {
@@ -525,26 +532,24 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= 23;
-  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
-  @ ensures  valid_header_check_result(\result, file_recovery_new);
-  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_gpg.extension || file_recovery_new->extension == extension_pgp);
-  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_gpg);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
+  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ requires \valid(packet_tag + (0 .. 15));
+  @ requires \separated(buffer + (..), packet_tag + (..));
+  @ assigns packet_tag[0 .. 15];
   @*/
-//  X assigns *file_recovery_new;
-static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_gpg_aux(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *packet_tag)
 {
-  uint64_t i=0;
-  unsigned int packet_tag[16];
+  unsigned int i;
   unsigned int nbr=0;
   int partial_body_length=0;
   int stop=0;
-  memset(packet_tag, 0, sizeof(packet_tag));
+  /*@
+    @ loop assigns packet_tag[0..15];
+    @ loop variant 16-i;
+    @*/
+  for(i=0; i<16; i++)
+    packet_tag[i]=0;
+  i=0;
   /*@ assert \initialized(packet_tag + (0 .. 15)); */
   /*@
     @ loop invariant 0 <= nbr <=16;
@@ -583,7 +588,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     /*@ assert 0 <= length_type <= 6; */
     tag=packet_tag[nbr];
 #ifdef DEBUG_GPG
-    log_info("GPG 0x%04lx: %02u tag=%2u, size=%u + %u)\n",
+    log_info("GPG 0x%04x: %02u tag=%2u, size=%u + %u)\n",
 	i, nbr, tag, length_type, length);
 #endif
 #if 0
@@ -748,6 +753,31 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
       nbr++;
     i+=length;
   }
+  return nbr;
+}
+
+/*@
+  @ requires buffer_size >= 23;
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_gpg.extension || file_recovery_new->extension == extension_pgp);
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_gpg);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
+  @*/
+//  X assigns *file_recovery_new;
+static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int packet_tag[16];
+  unsigned int nbr;
+#ifdef DEBUG_GPG
+  unsigned int i;
+#endif
+  nbr=header_check_gpg_aux(buffer, buffer_size, packet_tag);
   if(nbr<2)
     return 0;
   if(memcmp(buffer, pgp_header, sizeof(pgp_header))==0)
@@ -755,6 +785,10 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_gpg;
     file_recovery_new->extension=extension_pgp;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
+    /*@ assert file_recovery_new->file_stat == \null; */
+    /*@ assert file_recovery_new->handle == \null; */
     return 1;
   }
   /* encrypted_data.gpg */
@@ -784,6 +818,10 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_gpg;
     file_recovery_new->extension=file_hint_gpg.extension;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
+    /*@ assert file_recovery_new->file_stat == \null; */
+    /*@ assert file_recovery_new->handle == \null; */
     return 1;
   }
 #ifdef DEBUG_GPG

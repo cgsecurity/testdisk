@@ -57,6 +57,11 @@ static int header_check_gpx(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_gpx.extension;
+  /*@ assert file_recovery_new->extension == file_hint_gpx.extension; */
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
+  /*@ assert file_recovery_new->file_stat == \null; */
+  /*@ assert file_recovery_new->handle == \null; */
   return 1;
 }
 

@@ -150,6 +150,7 @@ static int header_check_bgzf(const unsigned char *buffer, const unsigned char *b
   {
     /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
     file_recovery_new->extension="bai";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
     /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
@@ -157,6 +158,7 @@ static int header_check_bgzf(const unsigned char *buffer, const unsigned char *b
   {
     /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
     file_recovery_new->extension="bam";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
     /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
@@ -164,10 +166,12 @@ static int header_check_bgzf(const unsigned char *buffer, const unsigned char *b
   {
     /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
     file_recovery_new->extension="csi";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
     /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   file_recovery_new->extension="bgz";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
@@ -308,12 +312,16 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     {
       /* php Video Pro */
       file_recovery_new->extension="pvp";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(memcmp(buffer_uncompr, "<?xml version=\"1.0\" standalone=\"no\"?>\n<xournal", 46)==0)
     {
       /* Xournal, http://xournal.sourceforge.net/ */
       file_recovery_new->extension="xoj";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if( memcmp(buffer_uncompr, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<Ableton", 0x30)==0 ||
@@ -321,23 +329,31 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     {
       /* Ableton Liveset */
       file_recovery_new->extension="als";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(memcmp(buffer_uncompr, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<PremiereData", 0x34)==0)
     {
       /* Adobe Premiere */
       file_recovery_new->extension="prproj";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(memcmp(buffer_uncompr, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<gnc-v2", 47)==0)
     {
       /* GnuCash, http://gnucash.org/ */
       file_recovery_new->extension="gnucash";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(strstr((const char*)&buffer_uncompr, "<!DOCTYPE KMYMONEY-FILE>")!=NULL)
     {
       file_recovery_new->extension="kmy";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
 #ifndef DJGPP
@@ -345,23 +361,31 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     {
       /* R - language and environment for statistical computing and graphics */
       file_recovery_new->extension="RData";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(memcmp(buffer_uncompr, "<?xml version=", 14) == 0)
     {
       file_recovery_new->extension="xml.gz";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(memcmp(buffer_uncompr, schematic_header, sizeof(schematic_header))==0)
     {
       /* Minecraft Schematic File */
       file_recovery_new->extension="schematic";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     if(memcmp(buffer_uncompr, "<SCRIBUS", 8) == 0)
     {
       /* Scribus XML file */
       file_recovery_new->extension="sla.gz";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
     {
@@ -373,6 +397,8 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 	  if(strncasecmp((const char*)&buffer_uncompr[i], "<html", 5)==0)
 	  {
 	    file_recovery_new->extension="html.gz";
+	    /*@ assert valid_read_string(file_recovery_new->extension); */
+	    /*@ assert valid_file_recovery(file_recovery_new); */
 	    return 1;
 	  }
 	}
@@ -387,6 +413,8 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 #else
       file_recovery_new->extension="tar.gz";
 #endif
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
   }
@@ -405,6 +433,8 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   file_recovery_new->file_rename=&file_rename_gz;
 #endif
   file_recovery_new->extension=file_hint_gz.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

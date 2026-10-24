@@ -75,14 +75,17 @@ struct dd_struct
 static uint64_t file_check_hdf_aux(FILE *handle, char *dd_buf)
 {
   uint64_t file_size=0;
-  uint64_t offset_old;
+  uint64_t offset_old=0;
   uint64_t offset=4;
   const struct dd_struct *dd=(const struct dd_struct *)dd_buf;
   /*@
+    @ loop invariant offset_old < offset;
+    @ loop invariant offset <= UINT32_MAX;
     @ loop assigns file_size, offset_old, offset;
     @ loop assigns *(dd_buf + (0 .. 65536 * sizeof(struct dd_struct)-1));
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns *handle, errno;
+    @ loop variant UINT32_MAX - offset;
     @*/
   do
   {
@@ -141,7 +144,9 @@ static uint64_t file_check_hdf_aux(FILE *handle, char *dd_buf)
 /*@
   @ requires \separated(file_recovery, file_recovery->handle, &errno, &Frama_C_entropy_source, &__fc_heap_status);
   @ requires valid_file_check_param(file_recovery);
-  @ ensures  valid_file_check_result(file_recovery);
+  @ terminates is_allocable(sizeof(struct dd_struct)*65536);
+  @ ensures valid_file_check_result(file_recovery);
+  @ exits \true;
   @*/
 static void file_check_hdf(file_recovery_t *file_recovery)
 {
@@ -157,6 +162,7 @@ static void file_check_hdf(file_recovery_t *file_recovery)
     file_recovery->file_size=0;
   else
     file_recovery->file_size = file_size;
+  /*@ assert valid_file_check_result(file_recovery); */
 }
 
 /*@
@@ -175,6 +181,8 @@ static int header_check_hdf(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_hdf.extension;
   file_recovery_new->file_check=&file_check_hdf;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

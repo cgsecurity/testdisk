@@ -94,10 +94,14 @@ static int header_check_hdf5(const unsigned char *buffer, const unsigned int buf
 #endif
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_hdf5.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

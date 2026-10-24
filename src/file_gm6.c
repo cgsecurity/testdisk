@@ -54,6 +54,8 @@ static int header_check_gm81(const unsigned char *buffer, const unsigned int buf
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="gm81";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -68,6 +70,8 @@ static int header_check_gmk(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="gmk";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -82,6 +86,8 @@ static int header_check_gm6(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="gm6";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -96,6 +102,8 @@ static int header_check_gmd(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="gmd";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

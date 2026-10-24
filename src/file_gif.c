@@ -77,17 +77,52 @@ static void file_check_gif(file_recovery_t *file_recovery)
 }
 
 /*@
+  @ assigns \nothing;
+  @ behavior bit_set:
+  @       assumes (buffer9 & 0x80) == 0x80;
+  @       ensures \result == 11 + (6<<(buffer9 & 0x7));
+  @ behavior bit_not_set:
+  @       assumes (buffer9 & 0x80) != 0x80;
+  @       ensures \result == 11;
+  @ complete behaviors;
+  @ disjoint behaviors;
+  @*/
+static unsigned int image_separator_size(const unsigned char buffer9)
+{
+  if((buffer9 & 0x80) == 0x80)
+  {
+    const unsigned int tmp=buffer9 & 0x7;
+    /*@ assert 0 <= tmp <= 7; */
+    /*@ assert tmp == (buffer9 & 7); */
+    /* local color present */
+    const unsigned int tmp2=11 + (6<<tmp);
+    /*@ assert tmp2 == 11 + (6<<tmp); */
+    return tmp2;
+  }
+  return 11;
+}
+
+/*@
   @ requires file_recovery->data_check==&data_check_gif;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
   @ decreases PHOTOREC_MAX_FILE_SIZE - file_recovery->calculated_file_size;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
-  @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
+  @ ensures \old(file_recovery->calculated_file_size) <= file_recovery->calculated_file_size;
+  @ assigns file_recovery->calculated_file_size
+      \from file_recovery->calculated_file_size,
+            file_recovery->file_size,
+            buffer_size,
+            buffer[0 .. buffer_size-1];
+  @ assigns file_recovery->data_check
+      \from file_recovery->calculated_file_size,
+            file_recovery->file_size,
+            buffer_size,
+            buffer[0 .. buffer_size-1];
   @*/
 static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
@@ -106,23 +141,22 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
 	/* Application Extension 	21 ff 			*/
 	file_recovery->calculated_file_size+=2;
 	if(file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE)
+	{
 	  return DC_STOP;
-	/*@ assert file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE; */
+	}
 	file_recovery->data_check=&data_check_gif2;
 	return data_check_gif2(buffer, buffer_size, file_recovery);
       case 0x2c:
 	if(i + 20 < buffer_size)
 	{
-	  unsigned int j=10+1;
+	  /*@ assert i < buffer_size - 20; */
+	  /*@ assert \valid_read(buffer+(0..i+20-1)); */
 	  /* 1	Image Descriptor id=0x2c
 	   * 4: NW corner
 	   * 4: width, heigth,
-	   * 1: is a local color table present ? */
-	  if(((buffer[i+9]>>7)&0x1)>0)
-	  {
-	    /* local color table */
-	    j+=3<<((buffer[i+9]&7)+1);
-	  }
+	   * 1: packed field */
+	  const unsigned int j=image_separator_size(buffer[i+9]);
+	  /*@ assert j >= 11; */
 	  file_recovery->calculated_file_size+=j;
 	  /* 1: Start of image - LZW minimum code size */
 	  /* Table Based Image Data */
@@ -144,27 +178,42 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
 }
 
 /*@
+  @ requires \valid(file_recovery);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires file_recovery->data_check==&data_check_gif2;
+  @ requires buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
   @ decreases PHOTOREC_MAX_FILE_SIZE - file_recovery->calculated_file_size;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
-  @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
+  @ ensures \old(file_recovery->calculated_file_size) <= file_recovery->calculated_file_size;
+  @ assigns file_recovery->calculated_file_size
+      \from file_recovery->calculated_file_size,
+            file_recovery->file_size,
+            buffer_size,
+            buffer[0 .. buffer_size-1];
+  @ assigns file_recovery->data_check
+      \from file_recovery->calculated_file_size,
+            file_recovery->file_size,
+            buffer_size,
+            buffer[0 .. buffer_size-1];
   @*/
 static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
-    @ loop invariant file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
+    @ loop invariant file_recovery->data_check == &data_check_gif2;
+    @ loop invariant file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE;
+    @ loop invariant \at(file_recovery->calculated_file_size, Pre) <= file_recovery->calculated_file_size;
+    @ loop invariant file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
     @ loop assigns file_recovery->calculated_file_size, file_recovery->data_check;
-    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 1);
+    @ loop variant PHOTOREC_MAX_FILE_SIZE - file_recovery->calculated_file_size;
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
-    /*@ assert file_recovery->data_check==&data_check_gif2; */
     /*@ assert 0 <= i < buffer_size - 1; */
 #ifdef DEBUG_GIF
     log_info("data_check_gif2 calculated_file_size=0x%llx\n",
@@ -179,15 +228,29 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
       file_recovery->data_check=&data_check_gif;
       return data_check_gif(buffer, buffer_size, file_recovery);
     }
-    /*@ assert file_recovery->data_check==&data_check_gif2; */
   }
-  /*@ assert file_recovery->data_check==&data_check_gif2; */
   return DC_CONTINUE;
 }
 
 /*@
+  @ assigns \nothing;
+  @ ensures 13 <= \result <= 13 + (6<<7);
+  @*/
+static unsigned int gif_size_before_image(const unsigned char buffer10)
+{
+  unsigned int offset=6+7;   /* Header + Logical Screen Descriptor */
+  if((buffer10 & 0x80) == 0x80)
+  {
+    /* Global Color Table */
+    const unsigned int tmp=buffer10&7;
+    offset+=6<<tmp;
+  }
+  /*@ assert 13 <= offset <= 13 + (6<<7); */
+  return offset;
+}
+
+/*@
   @ requires buffer_size >= 6+7+(3<<8)+1;
-  @ requires separation: \separated(&file_hint_gif, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -201,24 +264,20 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
   @*/
 static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  uint64_t offset;
-  offset=6;   /* Header */
-  offset+=7;  /* Logical Screen Descriptor */
-  if((buffer[10]>>7)&0x1)
-  {
-    /* Global Color Table */
-    offset+=3<<((buffer[10]&7)+1);
-  }
+  const uint64_t offset=gif_size_before_image(buffer[10]);
   if(offset < buffer_size && buffer[offset]!=0x21 && buffer[offset]!=0x2c)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_gif.extension;
   file_recovery_new->min_filesize=42;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   if(file_recovery_new->blocksize < 2)
     return 1;
   file_recovery_new->calculated_file_size=offset;
   file_recovery_new->file_check=&file_check_gif;
   file_recovery_new->data_check=&data_check_gif;
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

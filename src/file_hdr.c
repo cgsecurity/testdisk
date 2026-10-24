@@ -77,12 +77,16 @@ static int header_check_hdr(const unsigned char *buffer, const unsigned int buff
   {
     file_recovery_new->extension="cab";
     file_recovery_new->min_filesize=0x200;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   file_recovery_new->extension=file_hint_hdr.extension;
   file_recovery_new->calculated_file_size=filesize;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
