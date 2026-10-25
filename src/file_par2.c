@@ -153,10 +153,14 @@ static int header_check_par2(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->extension=file_hint_par2.extension;
   file_recovery_new->file_rename=&file_rename_par2;
   file_recovery_new->min_filesize=64+length;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   if(file_recovery_new->blocksize < 16)
     return 1;
   file_recovery_new->data_check=&data_check_par2;
   file_recovery_new->file_check=&file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

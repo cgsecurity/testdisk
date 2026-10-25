@@ -224,12 +224,16 @@ static int header_check_psd(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=70;
   file_recovery_new->extension=file_hint_psd.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   if(file_recovery_new->blocksize < 16)
     return 1;
   /* File header */
   file_recovery_new->calculated_file_size=0x1a;
   file_recovery_new->data_check=&psd_skip_color_mode;
   file_recovery_new->file_check=&file_check_size_min;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

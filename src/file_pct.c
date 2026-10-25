@@ -145,6 +145,8 @@ static int header_check_pct(const unsigned char *buffer, const unsigned int buff
 	be16(pct->OXMin), be16(pct->OXMax),
 	be16(pct->OYMin), be16(pct->OYMax));
 #endif
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

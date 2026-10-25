@@ -295,7 +295,7 @@ static int header_check_spe(const unsigned char *buffer, const unsigned int buff
   if((tmp&0x8000000000000000)!=0)
     return 0;
   tmp+=4100;
-
+  /*@ assert tmp > 4100; */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_spe.extension;
   file_recovery_new->min_filesize=4100;
@@ -307,6 +307,7 @@ static int header_check_spe(const unsigned char *buffer, const unsigned int buff
 #endif
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
+  /*@ assert file_recovery_new->calculated_file_size > 4100; */
   return 1;
 }
 

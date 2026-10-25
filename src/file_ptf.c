@@ -57,10 +57,14 @@ static int header_check_ptf(const unsigned char *buffer, const unsigned int buff
     case 1:
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_ptf.extension;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     case 5:
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension="ptx";
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     default:
       return 0;

@@ -133,6 +133,8 @@ static int header_check_pdb(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=file_hint_pdb.extension;
     file_recovery_new->data_check=&data_check_pdb82;
     file_recovery_new->min_filesize=82;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   if(buffer[80]=='\n')
@@ -141,6 +143,8 @@ static int header_check_pdb(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=file_hint_pdb.extension;
     file_recovery_new->data_check=&data_check_pdb81;
     file_recovery_new->min_filesize=81;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

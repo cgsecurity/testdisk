@@ -85,6 +85,8 @@ static int header_check_pzh(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension=file_hint_pzh.extension;
   file_recovery_new->file_rename=&file_rename_pzh;
   file_recovery_new->min_filesize=0x9c4 + sizeof(pzh_header);
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

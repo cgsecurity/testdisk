@@ -108,6 +108,8 @@ static int header_check_pcx(const unsigned char *buffer, const unsigned int buff
     log_info("BytesPerLine %u - %u\n", pcx->BytesPerLine, (le16(pcx->XMax)-le16(pcx->XMin)+1)*pcx->BitsPerPixel/8);
 #endif
     file_recovery_new->extension=file_hint_pcx.extension;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

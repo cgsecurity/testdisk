@@ -113,11 +113,15 @@ static int header_check_ps(const unsigned char *buffer, const unsigned int buffe
 	file_recovery_new->extension=file_hint_ps.extension;
 	if(file_recovery_new->blocksize > 8)
 	  file_recovery_new->data_check=&data_check_ps;
+	/*@ assert valid_read_string(file_recovery_new->extension); */
+	/*@ assert valid_file_recovery(file_recovery_new); */
 	return 1;
       case 'E':
 	if(i+5 <= buffer_size && memcmp(&buffer[i],"EPSF-",5)==0)
 	{
 	  file_recovery_new->extension="eps";
+	  /*@ assert valid_read_string(file_recovery_new->extension); */
+	  /*@ assert valid_file_recovery(file_recovery_new); */
 	  return 1;
 	}
 	break;
@@ -126,6 +130,8 @@ static int header_check_ps(const unsigned char *buffer, const unsigned int buffe
   file_recovery_new->extension=file_hint_ps.extension;
   if(file_recovery_new->blocksize > 8)
     file_recovery_new->data_check=&data_check_ps;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

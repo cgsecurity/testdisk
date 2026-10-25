@@ -48,6 +48,9 @@
   @*/
 static void register_header_check_pdf(file_stat_t *file_stat);
 
+static void file_check_pdf(file_recovery_t *file_recovery);
+static void file_check_pdf_and_size(file_recovery_t *file_recovery);
+
 const file_hint_t file_hint_pdf= {
   .extension="pdf",
   .description="Portable Document Format, Adobe Illustrator",
@@ -259,9 +262,41 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
 }
 
 /*@
+  @ requires file_recovery->file_check==&file_check_pdf || file_recovery->file_check == &file_check_pdf_and_size;
   @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
   @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ ensures valid_file_recovery(file_recovery);
+  @ assigns *file_recovery->handle, file_recovery->time;
+  @ assigns errno;
+  @ assigns Frama_C_entropy_source;
+  @*/
+static void file_date_pdf_aux(file_recovery_t *file_recovery, const uint64_t offset)
+{
+  char buffer_time[22];
+  if(my_fseek(file_recovery->handle, offset, SEEK_SET)>=0 &&
+      fread(buffer_time, 1, 22, file_recovery->handle) == 22)
+  {
+    /*@ assert \initialized( buffer_time+ (0 .. 22-1)); */
+    if(buffer_time[0]=='=' && (buffer_time[1]=='\'' || buffer_time[1]=='"'))
+    {
+      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const unsigned char *)&buffer_time[2]);
+    }
+    else if(buffer_time[0]=='>')
+    {
+      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const unsigned char *)&buffer_time[1]);
+    }
+  }
+  /*@ assert \initialized(&file_recovery->time); */
+  /*@ assert valid_file_recovery(file_recovery); */
+}
+
+/*@
+  @ requires file_recovery->file_check==&file_check_pdf || file_recovery->file_check == &file_check_pdf_and_size;
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ ensures valid_file_recovery(file_recovery);
   @ assigns *file_recovery->handle, file_recovery->time;
   @ assigns errno;
   @ assigns Frama_C_entropy_source;
@@ -273,14 +308,19 @@ static void file_date_pdf(file_recovery_t *file_recovery)
   unsigned int j=0;
   char buffer[4096];
   if(file_recovery->file_size > PHOTOREC_MAX_FILE_SIZE)
+  {
+    /*@ assert valid_file_recovery(file_recovery); */
     return ;
+  }
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
   {
+    /*@ assert valid_file_recovery(file_recovery); */
     return ;
   }
   /*@
     @ loop invariant \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, buffer + (..));
+    @ loop invariant valid_file_recovery(file_recovery);
     @ loop assigns offset, j, *file_recovery->handle, file_recovery->time, buffer[0..4095];
     @ loop assigns errno;
     @ loop assigns Frama_C_entropy_source;
@@ -292,6 +332,7 @@ static void file_date_pdf(file_recovery_t *file_recovery)
     const int bsize=fread(buffer, 1, 4096, file_recovery->handle);
     if(bsize<=0)
     {
+      /*@ assert valid_file_recovery(file_recovery); */
       return ;
     }
 #if defined(__FRAMAC__)
@@ -301,7 +342,8 @@ static void file_date_pdf(file_recovery_t *file_recovery)
       @ loop invariant \initialized(buffer + (0 .. bsize-1));
       @ loop invariant \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, buffer + (..));
       @ loop invariant 0 <= i <= bsize;
-      @ loop assigns i, j, *file_recovery->handle, file_recovery->time, buffer[0..21];
+      @ loop invariant valid_file_recovery(file_recovery);
+      @ loop assigns i, j, *file_recovery->handle, file_recovery->time;
       @ loop assigns errno;
       @ loop variant bsize - i;
       @*/
@@ -311,19 +353,8 @@ static void file_date_pdf(file_recovery_t *file_recovery)
       {
 	if(++j==sizeof(pattern))
 	{
-	  if(my_fseek(file_recovery->handle, offset+i+1, SEEK_SET)>=0 &&
-	      fread(buffer, 1, 22, file_recovery->handle) == 22)
-	  {
-	    /*@ assert \initialized( buffer+ (0 .. 22-1)); */
-	    if(buffer[0]=='=' && (buffer[1]=='\'' || buffer[1]=='"'))
-	    {
-	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const unsigned char *)&buffer[2]);
-	    }
-	    else if(buffer[0]=='>')
-	    {
-	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const unsigned char *)&buffer[1]);
-	    }
-	  }
+	  file_date_pdf_aux(file_recovery, offset +i+1);
+	  /*@ assert valid_file_recovery(file_recovery); */
 	  return ;
 	}
       }
@@ -332,12 +363,14 @@ static void file_date_pdf(file_recovery_t *file_recovery)
     }
     offset+=bsize;
   }
+  /*@ assert valid_file_recovery(file_recovery); */
 }
 
 
 #define PDF_READ_SIZE 20
 
 /*@
+  @ requires file_recovery->file_check == &file_check_pdf_and_size;
   @ requires valid_file_check_param(file_recovery);
   @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, file_recovery->time, file_recovery->file_size;
@@ -386,6 +419,7 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 }
 
 /*@
+  @ requires file_recovery->file_check==&file_check_pdf;
   @ requires valid_file_check_param(file_recovery);
   @ ensures  valid_file_check_result(file_recovery);
   @ assigns  *file_recovery->handle, file_recovery->time, file_recovery->file_size;
@@ -485,14 +519,18 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=file_hint_pdf.extension;
     file_recovery_new->file_rename=&file_rename_pdf;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   if(file_size == 0)
   {
     file_recovery_new->file_check=&file_check_pdf;
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   file_recovery_new->calculated_file_size=file_size;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_pdf_and_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
