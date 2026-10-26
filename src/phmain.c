@@ -186,7 +186,11 @@ int main( int argc, char **argv )
     .expert=0,
     .lowmem=0,
     .verbose=0,
-    .list_file_format=array_file_enable
+    .list_file_format=array_file_enable,
+    .image_min_width=0,
+    .image_min_height=0,
+    .image_min_pixels=0,
+    .image_min_bytes=0
   };
   struct ph_param params;
   if(argc <= 0)
