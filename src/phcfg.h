@@ -40,6 +40,11 @@ int file_options_save(const file_enable_t *files_enable);
   @*/
 int file_options_load(file_enable_t *files_enable);
 
+/*@
+  @ assigns \nothing;
+  @*/
+int file_options_exists(void);
+
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

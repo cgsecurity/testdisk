@@ -177,6 +177,17 @@ static FILE *file_options_load_aux(void)
   return NULL;
 }
 
+int file_options_exists(void)
+{
+  FILE *handle=file_options_load_aux();
+  if(handle!=NULL)
+  {
+    fclose(handle);
+    return 1;
+  }
+  return 0;
+}
+
 int file_options_save(const file_enable_t *files_enable)
 {
   FILE *handle;
