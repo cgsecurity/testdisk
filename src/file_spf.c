@@ -64,6 +64,7 @@ static void file_check_spf(file_recovery_t *file_recovery)
     @ loop invariant valid_file_check_param(file_recovery);
     @ loop assigns *file_recovery->handle, file_recovery->file_size;
     @ loop assigns Frama_C_entropy_source, errno;
+    @ loop variant PHOTOREC_MAX_FILE_SIZE - file_recovery->file_size;
     @*/
   while(1)
   {
@@ -123,6 +124,8 @@ static int header_check_spf(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_spf.extension;
   file_recovery_new->file_check=&file_check_spf;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

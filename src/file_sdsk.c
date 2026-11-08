@@ -54,6 +54,8 @@ static int header_check_sdsk(const unsigned char *buffer, const unsigned int buf
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_sdsk.extension;
   file_recovery_new->min_filesize=0x1000;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

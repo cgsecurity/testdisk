@@ -106,6 +106,8 @@ static int header_check_steuer(const unsigned char *buffer, const unsigned int b
   strptime(h->date_string, "%b %d %Y %H:%M:%S", &tm_time);
   file_recovery_new->time=mktime(&tm_time);
 #endif
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

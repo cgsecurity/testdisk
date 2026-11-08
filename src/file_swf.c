@@ -94,6 +94,7 @@ static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigne
   const unsigned int sign=((**data) >>(7 - (*offset_bit)))&1;
   /*@
      loop unroll 31;
+     loop invariant 0 <= *offset_bit <= 7;
      loop assigns nbit, *offset_bit, *data, res;
      loop variant nbit;
      */
@@ -197,6 +198,8 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->calculated_file_size=le32(hdr->size);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size_max;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -242,6 +245,8 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=le32(hdr->size);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -270,6 +275,8 @@ static int header_check_swfz(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->calculated_file_size=(uint64_t)4+4+4+5+compressedLen;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size_max;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

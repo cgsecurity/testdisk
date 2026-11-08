@@ -66,6 +66,8 @@ static int header_check_snag(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->extension=file_hint_snag.extension;
   file_recovery_new->file_check=&file_check_snag;
   file_recovery_new->min_filesize=24+512;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
