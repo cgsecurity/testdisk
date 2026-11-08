@@ -102,6 +102,8 @@ static int header_check_rpm(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->min_filesize=(96 + 16 + 16); /* file header + checksum + content header */
   file_recovery_new->extension=file_hint_rpm.extension;
   file_recovery_new->file_rename=&file_rename_rpm;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

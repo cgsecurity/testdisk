@@ -91,6 +91,8 @@ static int header_check_reg_9x(const unsigned char *buffer, const unsigned int b
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=0x1000;
   file_recovery_new->extension=file_hint_reg.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -128,6 +130,8 @@ static int header_check_reg_nt(const unsigned char *buffer, const unsigned int b
   file_recovery_new->min_filesize=0x1000;
   file_recovery_new->extension=file_hint_reg.extension;
   file_recovery_new->time=td_ntfs2utc(le64(header->modification_time));
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

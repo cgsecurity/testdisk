@@ -104,6 +104,8 @@ static int header_check_ra(const unsigned char *buffer, const unsigned int buffe
     file_recovery_new->calculated_file_size=(uint64_t)8 + be16(ra3->header_size) + be32(ra3->data_size);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   else if(buffer[4]==0x00 && buffer[5]==0x04 &&
@@ -115,6 +117,8 @@ static int header_check_ra(const unsigned char *buffer, const unsigned int buffe
     file_recovery_new->calculated_file_size=(uint64_t)40 + be16(ra4->header_size) + be32(ra4->data_size);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

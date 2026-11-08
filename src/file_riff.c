@@ -38,6 +38,7 @@
 
 /*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_riff(file_stat_t *file_stat);
+static void file_check_avi(file_recovery_t *fr);
 
 const file_hint_t file_hint_riff= {
   .extension="riff",
@@ -47,6 +48,8 @@ const file_hint_t file_hint_riff= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_riff
 };
+
+static const char *extension_avi="avi";
 
 typedef struct {
   uint32_t dwFourCC;
@@ -103,6 +106,7 @@ static void log_riff_chunk(const uint64_t offset, const unsigned int depth, cons
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
   @ requires end <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires fr->file_check == &file_check_avi;
   @ decreases 5 - depth;
   @ ensures  valid_file_recovery(fr);
   @ ensures  \valid(fr->handle);
@@ -298,80 +302,101 @@ data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned i
 }
 
 /*@
+    predicate valid_header_check_param_short(unsigned char *buffer, unsigned int buffer_size, file_recovery_t *file_recovery_new) =(
+      buffer_size > 0 &&
+      \valid_read(buffer+(0..buffer_size-1)) &&
+      \initialized(buffer+(0..buffer_size-1)) &&
+      \valid(file_recovery_new) &&
+      file_recovery_new->blocksize > 0 &&
+      file_recovery_new->blocksize <= buffer_size &&
+      \separated(buffer+(..), file_recovery_new)
+   );
+@*/
+
+/*@
+  @ requires buffer_size >= 12;
+  @ requires file_recovery_new->data_check==\null;
+  @ requires file_recovery_new->file_check==\null;
+  @ requires file_recovery_new->file_stat == \null;
+  @ requires file_recovery_new->handle == \null;
+  @ requires separation: \separated(&file_hint_riff, buffer+(..), file_recovery_new, extension_avi);
+  @ requires valid_header_check_param_short(buffer, buffer_size, file_recovery_new);
+  @ requires valid_file_recovery(file_recovery_new);
+  @ requires file_recovery_new->extension == extension_avi;
+  @ ensures \result == 1;
+  @ ensures valid_file_recovery(file_recovery_new);
+  @ ensures valid_header_check_result(\result, file_recovery_new);
+  @ assigns file_recovery_new->extension;
+  @ assigns file_recovery_new->data_check;
+  @ assigns file_recovery_new->file_check;
+  @ assigns file_recovery_new->calculated_file_size;
+  @*/
+static int header_check_riff_avi(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery_new, const uint64_t size)
+{
+  const riff_list_header_t list_movi={
+    .dwList=be32(0x4c495354),	/* LIST */
+    .dwSize=le32(4),
+    .dwFourCC=be32(0x6d6f7669)	/* movi */
+  };
+#if 0
+  reset_file_recovery(file_recovery_new);
+#endif
+  /*@ assert file_recovery_new->file_stat == \null; */
+  /*@ assert file_recovery_new->handle == \null; */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->file_stat); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->handle); */
+  /* assert valid_file_recovery(file_recovery_new); */
+  file_recovery_new->extension=extension_avi;
+  /*@ assert valid_read_string(extension_avi); */
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /* Is it a raw avi stream with Data Binary chunks ? */
+  if(size >= sizeof(list_movi) && size <= buffer_size - 4 &&
+      memcmp(&buffer[size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
+      buffer[size+2]=='d' &&
+      buffer[size+3]=='b')
+  {
+    if(file_recovery_new->blocksize < 8)
+    {
+      /*@ assert file_recovery_new->data_check==\null; */
+      /*@ assert file_recovery_new->file_check==\null; */
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
+      /*@ assert file_recovery_new->file_stat == \null; */
+      /*@ assert file_recovery_new->handle == \null; */
+      return 1;
+    }
+    file_recovery_new->data_check=&data_check_avi_stream;
+    file_recovery_new->file_check=&file_check_size_max;
+  }
+  else
+  {
+    if(file_recovery_new->blocksize < 12)
+    {
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert valid_file_recovery(file_recovery_new); */
+      return 1;
+    }
+    file_recovery_new->data_check=&data_check_avi;
+    file_recovery_new->file_check=&file_check_avi;
+  }
+  file_recovery_new->calculated_file_size=size;
+  /*@ assert file_recovery_new->data_check==&data_check_avi || file_recovery_new->data_check==&data_check_avi_stream; */
+  /*@ assert file_recovery_new->file_check==&file_check_avi || file_recovery_new->file_check==&file_check_size_max; */
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
+  return 1;
+}
+
+/*@
   @ requires buffer_size >= 12;
   @ requires separation: \separated(&file_hint_riff, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures \result == 1;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
-static int header_check_riff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_riff_various(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new, const uint64_t size)
 {
-  uint64_t size;
-  if(!( buffer[8]>='A' && buffer[8]<='Z' &&
-	buffer[9]>='A' && buffer[9]<='Z' &&
-	buffer[10]>='A' && buffer[10]<='Z' &&
-	((buffer[11]>='A' && buffer[11]<='Z') || buffer[11]==' ' ||
-	 (buffer[11]>='0' && buffer[11]<='9'))))
-    return 0;
-  if(memcmp(&buffer[8],"NUND",4)==0)
-  {
-    /* Cubase Project File */
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="cpr";
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) +
-      (((uint64_t)buffer[5])<<16) + (((uint64_t)buffer[6])<<8) +
-      (uint64_t)buffer[7] + 12;
-    return 1;
-  }
-  size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
-
-  /* Windows Animated Cursor */
-  if(memcmp(&buffer[8],"ACON",4)==0)
-  {
-    if(size < 12)
-      return 0;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->calculated_file_size=size;
-    file_recovery_new->extension="ani";
-    return 1;
-  }
-  size+=8;
-  if(memcmp(&buffer[8],"AVI ",4)==0)
-  {
-    const riff_list_header_t list_movi={
-      .dwList=be32(0x4c495354),	/* LIST */
-      .dwSize=le32(4),
-      .dwFourCC=be32(0x6d6f7669)	/* movi */
-    };
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="avi";
-    /* Is it a raw avi stream with Data Binary chunks ? */
-    if(size >= sizeof(list_movi) && size <= buffer_size - 4 &&
-	memcmp(&buffer[size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
-	buffer[size+2]=='d' &&
-	buffer[size+3]=='b')
-    {
-      if(file_recovery_new->blocksize < 8)
-	return 1;
-      file_recovery_new->data_check=&data_check_avi_stream;
-      file_recovery_new->file_check=&file_check_size_max;
-    }
-    else
-    {
-      if(file_recovery_new->blocksize < 12)
-	return 1;
-      file_recovery_new->data_check=&data_check_avi;
-      file_recovery_new->file_check=&file_check_avi;
-    }
-    file_recovery_new->calculated_file_size=size;
-    return 1;
-  }
-  if(size < 12)
-    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->calculated_file_size=size;
   file_recovery_new->file_check=&file_check_size;
@@ -402,7 +427,72 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     file_recovery_new->extension="webp";
   else
     file_recovery_new->extension="avi";
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
+}
+
+/*@
+  @ requires buffer_size >= 12;
+  @ requires separation: \separated(&file_hint_riff, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
+static int header_check_riff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  uint64_t size;
+  if(!( buffer[8]>='A' && buffer[8]<='Z' &&
+	buffer[9]>='A' && buffer[9]<='Z' &&
+	buffer[10]>='A' && buffer[10]<='Z' &&
+	((buffer[11]>='A' && buffer[11]<='Z') || buffer[11]==' ' ||
+	 (buffer[11]>='0' && buffer[11]<='9'))))
+    return 0;
+  if(memcmp(&buffer[8],"NUND",4)==0)
+  {
+    /* Cubase Project File */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension="cpr";
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) +
+      (((uint64_t)buffer[5])<<16) + (((uint64_t)buffer[6])<<8) +
+      (uint64_t)buffer[7] + 12;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
+    return 1;
+  }
+  size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
+
+  /* Windows Animated Cursor */
+  if(memcmp(&buffer[8],"ACON",4)==0)
+  {
+    if(size < 12)
+      return 0;
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->calculated_file_size=size;
+    file_recovery_new->extension="ani";
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
+    return 1;
+  }
+  size+=8;
+  if(memcmp(&buffer[8],"AVI ",4)==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    /* assert valid_file_recovery(file_recovery_new); */
+    header_check_riff_avi(buffer, buffer_size, file_recovery_new, size);
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
+    /*@ assert file_recovery_new->file_stat == \null; */
+    /*@ assert file_recovery_new->handle == \null; */
+    return 1;
+  }
+  if(size < 12)
+    return 0;
+  return header_check_riff_various(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new, size);
 }
 
 /*@
@@ -421,6 +511,8 @@ static int header_check_rifx(const unsigned char *buffer, const unsigned int buf
     file_recovery_new->file_check=&file_check_size_min;
     file_recovery_new->calculated_file_size=(uint64_t)buffer[7]+(((uint64_t)buffer[6])<<8)+(((uint64_t)buffer[5])<<16)+(((uint64_t)buffer[4])<<24)+8;
     file_recovery_new->extension="aep";
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

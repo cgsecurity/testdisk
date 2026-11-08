@@ -73,6 +73,8 @@ static int header_check_rar15fmt(const unsigned char *buffer, const unsigned int
   if((buffer[0xa] & MHD_PASSWORD)==0)
     file_recovery_new->file_check=&file_check_rar15fmt;
   file_recovery_new->extension=file_hint_rar.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -103,6 +105,8 @@ static int header_check_rar50fmt(const unsigned char *buffer, const unsigned int
   if((buffer[0xa] & MHD_PASSWORD)==0)
     file_recovery_new->file_check=&file_check_rar50fmt;
   file_recovery_new->extension=file_hint_rar.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

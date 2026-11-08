@@ -151,10 +151,14 @@ static int header_check_r3d(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension = file_hint_r3d.extension;
     file_recovery_new->file_rename = &file_rename_r3d;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     if(file_recovery_new->blocksize < 8)
       return 1;
     file_recovery_new->data_check = &data_check_r3d;
     file_recovery_new->file_check = &file_check_size;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;
@@ -174,6 +178,8 @@ static int header_check_r3d_v2(const unsigned char *buffer, const unsigned int b
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension = file_hint_r3d.extension;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;
