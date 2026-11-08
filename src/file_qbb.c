@@ -175,6 +175,8 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_qbb;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -196,6 +198,8 @@ static int header_check_qbw(const unsigned char *buffer, const unsigned int buff
       (((uint64_t)buffer[0x34+2])<<16) + (((uint64_t)buffer[0x34+3])<<24))+1)*1024;
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;
@@ -214,6 +218,8 @@ static int header_check_qbw2(const unsigned char *buffer, const unsigned int buf
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="qbw";
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;
