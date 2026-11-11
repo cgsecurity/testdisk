@@ -130,6 +130,7 @@ fi
 %if  0%{?rhel} != 5
 %files -n qphotorec
 %attr(755,root,root) %{_bindir}/qphotorec
+%attr(755,root,root) %{_bindir}/qtestdisk
 %{_mandir}/man8/qphotorec.8*
 %{_mandir}/zh_CN/man8/qphotorec.8*
 %{_datadir}/applications/qphotorec.desktop

@@ -30,7 +30,7 @@ ICON_QPHOTOREC=icon_qph.rc ../icons/photorec.ico ../win/qphotorec_win.exe.manife
 endif
 
 if USEQT
-  QPHOTOREC=qphotorec
+  QPHOTOREC=qphotorec qtestdisk
 endif
 
 bin_PROGRAMS		= testdisk photorec fidentify $(QPHOTOREC)
@@ -442,6 +442,8 @@ qphotorec_H_SOURCES	= $(photorec_H) $(file_H) $(base_H) $(fs_H) $(ICON_QPHOTOREC
 qphotorec_SOURCES	= $(qphotorec_C_SOURCES) $(qphotorec_H_SOURCES)
 
 nodist_qphotorec_SOURCES = moc_qphotorec.cpp rcc_qphotorec.cpp rcc_qphotorec_locale.cpp
+
+qtestdisk_SOURCES	= qtestdisk.cpp
 
 fidentify_C_SOURCES	= $(file_C) $(smallbase_C) suspend_no.c fidentify.c
 fidentify_H_SOURCES	= $(file_H) $(smallbase_H)

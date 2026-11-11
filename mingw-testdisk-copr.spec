@@ -151,6 +151,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{mingw32_bindir}/*-fidentify.exe
 %attr(755,root,root) %{mingw32_bindir}/*-photorec.exe
 %attr(755,root,root) %{mingw32_bindir}/*-qphotorec.exe
+%attr(755,root,root) %{mingw32_bindir}/*-qtestdisk.exe
 %attr(755,root,root) %{mingw32_bindir}/*-testdisk.exe
 
 %files -n mingw64-testdisk
@@ -174,6 +175,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{mingw64_bindir}/*-fidentify.exe
 %attr(755,root,root) %{mingw64_bindir}/*-photorec.exe
 %attr(755,root,root) %{mingw64_bindir}/*-qphotorec.exe
+%attr(755,root,root) %{mingw64_bindir}/*-qtestdisk.exe
 %attr(755,root,root) %{mingw64_bindir}/*-testdisk.exe
 
 %changelog
