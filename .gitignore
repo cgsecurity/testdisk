@@ -25,6 +25,7 @@ Makefile
 /src/photorec
 /src/photorec.ses
 /src/qphotorec
+/src/qtestdisk
 /src/rcc_qphotorec.cpp
 /src/testdisk
 

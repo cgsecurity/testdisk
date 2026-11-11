@@ -8,7 +8,8 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_ph
 	dos/readme.txt \
 	linux/testdisk.spec.in \
 	linux/qphotorec.desktop \
-	src/icon_ph.rc src/icon_qph.rc src/icon_tst.rc \
+	linux/qtestdisk.desktop \
+	src/icon_ph.rc src/icon_qph.rc src/icon_qtd.rc src/icon_tst.rc \
 	src/photorec_64x64.png \
 	src/gnome/README \
 	src/gnome/application-exit.png  \
@@ -36,7 +37,7 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_ph
 	src/lang/qphotorec.zh_TW.ts \
 	win/qt.conf \
 	win/readme.txt win/photorec_win.exe.manifest win/qphotorec_win.exe.manifest \
-	win/testdisk_win.exe.manifest \
+	win/testdisk_win.exe.manifest win/qtestdisk_win.exe.manifest \
 	Android.mk jni/Android.mk \
 	.travis.yml
 
@@ -45,17 +46,17 @@ install-data-hook:
 	$(INSTALL_DATA) $(top_srcdir)/AUTHORS $(top_srcdir)/ChangeLog $(top_srcdir)/NEWS $(top_srcdir)/README.md $(top_srcdir)/THANKS $(top_srcdir)/documentation.html $(DESTDIR)$(docdir)
 if USEQT
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/applications
-	$(INSTALL_DATA) $(top_srcdir)/linux/qphotorec.desktop $(DESTDIR)$(datadir)/applications
+	$(INSTALL_DATA) $(top_srcdir)/linux/qphotorec.desktop $(top_srcdir)/linux/qtestdisk.desktop $(DESTDIR)$(datadir)/applications
 endif
 
 uninstall-hook:
 	rm -rf $(DESTDIR)$(docdir)
 if USEQT
-	rm -f $(DESTDIR)$(datadir)/applications/qphotorec.desktop
+	rm -f $(DESTDIR)$(datadir)/applications/qphotorec.desktop $(DESTDIR)$(datadir)/applications/qtestdisk.desktop
 endif
 
 static:
-	rm -f src/testdisk src/testdisk.exe src/photorec src/photorec.exe src/fidentify src/fidentify.exe src/qphotorec src/qphotorec.exe
+	rm -f src/testdisk src/testdisk.exe src/photorec src/photorec.exe src/fidentify src/fidentify.exe src/qphotorec src/qphotorec.exe src/qtestdisk src/qtestdisk.exe
 	$(MAKE) LDFLAGS="$(LDFLAGS) -static" LIBS="$(PTHREAD_LIBS) $(LIBS)" CFLAGS="$(PTHREAD_CFLAGS) $(CFLAGS)" CXXFLAGS="$(PTHREAD_CFLAGS) $(CXXFLAGS)"
 
 smallstatic:

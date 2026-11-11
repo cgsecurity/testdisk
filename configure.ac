@@ -998,6 +998,8 @@ then
   then
     qphotorec_LDADD="$qphotorec_LDADD $QT6GUI_LIBS $QT6WIDGETS_LIBS"
     qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QT6GUI_CFLAGS $QT6WIDGETS_CFLAGS"
+    qtestdisk_LDADD="$QT6GUI_LIBS $QT6WIDGETS_LIBS"
+    qtestdisk_CXXFLAGS="$QT6GUI_CFLAGS $QT6WIDGETS_CFLAGS"
   else
     use_qt=true
     export QT_SELECT=qt5
@@ -1063,12 +1065,15 @@ then
     fi
     qphotorec_LDADD="$qphotorec_LDADD $QT5GUI_LIBS $QT5WIDGETS_LIBS"
     qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QT5GUI_CFLAGS $QT5WIDGETS_CFLAGS"
+    qtestdisk_LDADD="$QT5GUI_LIBS $QT5WIDGETS_LIBS"
+    qtestdisk_CXXFLAGS="$QT5GUI_CFLAGS $QT5WIDGETS_CFLAGS"
   fi
 fi
 AM_CONDITIONAL(USEQT, test "$use_qt" = true)
 if test "$win_target" = yes;
 then
   qphotorec_LDADD="$qphotorec_LDADD -mwindows"
+  qtestdisk_LDADD="$qtestdisk_LDADD -mwindows"
 fi
 
 # e2fsprogs may be using pthread
@@ -1142,12 +1147,14 @@ AC_SUBST(photorec_LDADD)
 AC_SUBST(photorecf_LDADD)
 AC_SUBST(qphotorec_LDADD)
 AC_SUBST(qphotorec_CXXFLAGS)
+AC_SUBST(qtestdisk_LDADD)
+AC_SUBST(qtestdisk_CXXFLAGS)
 AC_CONFIG_FILES([
 	Makefile
 	icons/Makefile
 	src/Makefile
 	man/Makefile
-	man/testdisk.8 man/photorec.8 man/qphotorec.8 man/fidentify.8
+	man/testdisk.8 man/photorec.8 man/qphotorec.8 man/qtestdisk.8 man/fidentify.8
 	man/zh_CN/Makefile
 	man/zh_CN/testdisk.8 man/zh_CN/photorec.8 man/zh_CN/qphotorec.8 man/zh_CN/fidentify.8
 	linux/testdisk.spec

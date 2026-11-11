@@ -1,0 +1,317 @@
+/*
+
+    File: qtestdisk.cpp
+
+    Copyright (C) 2026 Maysara Mohamed
+
+    Qt front-end for TestDisk: runs "testdisk /cmd" and shows the results
+    from its log, so the partition recovery logic stays in testdisk itself.
+
+    This software is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write the Free Software Foundation, Inc., 51
+    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <cassert>
+#include <QApplication>
+#include <QComboBox>
+#include <QFile>
+#include <QFileDialog>
+#include <QFontDatabase>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QProcess>
+#include <QPushButton>
+#include <QRegularExpression>
+#include <QStandardPaths>
+#include <QTemporaryDir>
+#include <QVBoxLayout>
+#include <QWidget>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
+/* "testdisk /list" prints "Disk <device> - <size> - ..." per disk, or "Drive X: - ..." for
+   the Windows device \\.\X: (see file_win32_description()), then repeats it above the partitions */
+static QStringList parse_devices(const QString &out)
+{
+  QStringList devices;
+  static const QRegularExpression re(QStringLiteral("^(Disk|Drive) (.+?) - "), QRegularExpression::MultilineOption);
+  QRegularExpressionMatchIterator it=re.globalMatch(out);
+  while(it.hasNext())
+  {
+    const QRegularExpressionMatch m=it.next();
+    const QString dev=(m.captured(1)==QLatin1String("Drive") ? QStringLiteral("\\\\.\\") : QString()) + m.captured(2);
+    if(!devices.contains(dev))
+      devices << dev;
+  }
+  return devices;
+}
+
+/* With /debug, interface_recovery() logs the found partitions after a "Results" line */
+static QString results_from_log(const QString &log)
+{
+  const int pos=log.lastIndexOf(QStringLiteral("\nResults\n"));
+  return pos<0 ? QString() : log.mid(pos+1);
+}
+
+/* log_partition() lines follow "Results" directly; an empty line means nothing was found */
+static bool has_partitions(const QString &results)
+{
+  return results.startsWith(QStringLiteral("Results\n")) && results.size()>8 && results.at(8)!='\n';
+}
+
+static QString strip_ansi(QString s)
+{
+  static const QRegularExpression re(QStringLiteral("\x1b\\[[0-9;?]*[A-Za-z]|\x1b[()][0-9A-Za-z]|\x1b[=>]"));
+  return s.remove(re);
+}
+
+static void self_test()
+{
+  const QStringList d=parse_devices(QStringLiteral(
+	"TestDisk 7.3\nDisk /dev/sda - 500 GB / 465 GiB - CHS 60801 255 63\nSector size:512\n"
+	"Disk \\\\.\\PhysicalDrive1 - 8 GB / 7 GiB\nDrive G: - 524 MB / 500 MiB - CHS 16000 2 32\n"
+	"Disk image.dd - 10 MB / 9 MiB\n\nDisk /dev/sda - 500 GB / 465 GiB - CHS 60801 255 63\n     Partition\n"));
+  assert(d==QStringList({"/dev/sda", "\\\\.\\PhysicalDrive1", "\\\\.\\G:", "image.dd"}));
+  assert(results_from_log("x\nResults\nold\nResults\n 1 P FAT32\n")=="Results\n 1 P FAT32\n");
+  assert(results_from_log("no partition").isEmpty());
+  assert(has_partitions("Results\n   * FAT32  0 32 33  6 95 25  100352 [LOSTPART]\n\nHint"));
+  assert(!has_partitions("Results\n\ninterface_write()\n"));
+  assert(!has_partitions(QString()));
+  assert(strip_ansi("\x1b[1;1H\x1b[?25lDisk")=="Disk");
+  (void)d;
+}
+
+int main(int argc, char *argv[])
+{
+  QApplication app(argc, argv);
+  self_test();
+  const QString td=[]{
+    /* testdisk_win is the name used in the Windows zip */
+    for(const QString &name : {QStringLiteral("testdisk"), QStringLiteral("testdisk_win")})
+      for(const QStringList &dirs : {QStringList(QCoreApplication::applicationDirPath()), QStringList()})
+      {
+	const QString p=QStandardPaths::findExecutable(name, dirs);
+	if(!p.isEmpty())
+	  return p;
+      }
+    return QString();
+  }();
+  QTemporaryDir tmp;
+  const QString logPath=tmp.filePath(QStringLiteral("testdisk.log"));
+
+  QWidget win;
+  win.setWindowTitle(QStringLiteral("QTestDisk " VERSION));
+  auto *disks=new QComboBox;
+  disks->setMinimumContentsLength(30);
+  auto *refresh=new QPushButton(QObject::tr("Refresh"));
+  auto *openImg=new QPushButton(QObject::tr("Open image..."));
+  auto *arch=new QComboBox;
+  arch->addItem(QObject::tr("Auto-detect"), QString());
+  arch->addItem(QStringLiteral("Intel/PC (MBR)"), QStringLiteral("partition_i386"));
+  arch->addItem(QStringLiteral("EFI GPT"), QStringLiteral("partition_gpt"));
+  arch->addItem(QStringLiteral("Humax"), QStringLiteral("partition_humax"));
+  arch->addItem(QStringLiteral("Mac"), QStringLiteral("partition_mac"));
+  arch->addItem(QObject::tr("None (non-partitioned)"), QStringLiteral("partition_none"));
+  arch->addItem(QStringLiteral("Sun"), QStringLiteral("partition_sun"));
+  arch->addItem(QStringLiteral("XBox"), QStringLiteral("partition_xbox"));
+  auto *quick=new QPushButton(QObject::tr("Quick Search"));
+  auto *deeper=new QPushButton(QObject::tr("Deeper Search"));
+  auto *write=new QPushButton(QObject::tr("Write partition table..."));
+  auto *stop=new QPushButton(QObject::tr("Stop"));
+  auto *status=new QLabel;
+  auto *output=new QPlainTextEdit;
+  output->setReadOnly(true);
+  output->setLineWrapMode(QPlainTextEdit::NoWrap);
+  output->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
+  auto *row1=new QHBoxLayout;
+  row1->addWidget(new QLabel(QObject::tr("Disk:")));
+  row1->addWidget(disks, 1);
+  row1->addWidget(refresh);
+  row1->addWidget(openImg);
+  auto *row2=new QHBoxLayout;
+  row2->addWidget(new QLabel(QObject::tr("Partition table type:")));
+  row2->addWidget(arch);
+  row2->addStretch();
+  row2->addWidget(quick);
+  row2->addWidget(deeper);
+  row2->addWidget(write);
+  row2->addWidget(stop);
+  auto *layout=new QVBoxLayout(&win);
+  layout->addLayout(row1);
+  layout->addLayout(row2);
+  layout->addWidget(output, 1);
+  layout->addWidget(status);
+  win.resize(900, 600);
+
+  QProcess proc;
+#ifndef Q_OS_WIN
+  {
+    QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
+    /* testdisk starts ncurses even with /cmd: give it a terminal type and a size large enough not to block on "enlarge the terminal".
+       Not on Windows: testdisk gets a real console there, and PDCurses rejects LINES > 45 */
+    if(env.value(QStringLiteral("TERM")).isEmpty())
+      env.insert(QStringLiteral("TERM"), QStringLiteral("xterm"));
+    env.insert(QStringLiteral("LINES"), QStringLiteral("50"));
+    env.insert(QStringLiteral("COLUMNS"), QStringLiteral("120"));
+    proc.setProcessEnvironment(env);
+  }
+#endif
+  bool listing=false;
+  QString runningCmd, lastSearchCmd;
+
+  auto isWrite=[&]() { return runningCmd.endsWith(QStringLiteral(",write")); };
+  auto setBusy=[&](bool busy, const QString &msg) {
+    status->setText(msg);
+    for(QWidget *w : {(QWidget*)disks, (QWidget*)refresh, (QWidget*)openImg, (QWidget*)arch, (QWidget*)quick, (QWidget*)deeper})
+      w->setEnabled(!busy && (w==refresh || w==openImg || w==arch || w==disks || disks->count()>0));
+    write->setEnabled(!busy && !lastSearchCmd.isEmpty());
+    stop->setEnabled(busy && !isWrite());	/* never interrupt a partition table write */
+  };
+  auto start=[&](const QStringList &args) {
+    if(td.isEmpty())
+    {
+      listing=false;
+      runningCmd.clear();
+      setBusy(false, QObject::tr("testdisk not found"));
+      QMessageBox::critical(&win, win.windowTitle(), QObject::tr("The testdisk program was not found next to qtestdisk or in PATH."));
+      return;
+    }
+#ifdef Q_OS_WIN
+    /* PDCurses exits with "Redirection is not supported." when stdout is a pipe:
+       give "testdisk /cmd" its own hidden console, results are read from the log */
+    if(listing)
+      proc.setCreateProcessArgumentsModifier({});
+    else
+      proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *a) {
+	a->flags|=CREATE_NEW_CONSOLE;
+	a->startupInfo->dwFlags&=~STARTF_USESTDHANDLES;
+	a->startupInfo->dwFlags|=STARTF_USESHOWWINDOW;
+	a->startupInfo->wShowWindow=SW_HIDE;
+      });
+#endif
+    proc.start(td, args);
+    proc.closeWriteChannel();	/* any unexpected prompt reads EOF instead of hanging */
+  };
+  auto listDisks=[&]() {
+    listing=true;
+    runningCmd.clear();
+    setBusy(true, QObject::tr("Looking for disks..."));
+    start({QStringLiteral("/list")});
+  };
+  auto runCmd=[&](const QString &action) {
+    const QString a=arch->currentData().toString();
+    runningCmd=(a.isEmpty() ? QString() : a + ",") + action;
+    QFile::remove(logPath);
+    output->clear();
+    setBusy(true, QObject::tr("Running testdisk /cmd %1 %2 ...").arg(disks->currentData().toString(), runningCmd));
+    start({QStringLiteral("/logname"), logPath, QStringLiteral("/debug"), QStringLiteral("/cmd"), disks->currentData().toString(), runningCmd});
+  };
+  auto invalidate=[&]() {
+    lastSearchCmd.clear();
+    write->setEnabled(false);
+  };
+
+  QObject::connect(&proc, &QProcess::errorOccurred, [&](QProcess::ProcessError) {
+    if(proc.state()==QProcess::NotRunning)
+      setBusy(false, QObject::tr("Error: %1").arg(proc.errorString()));
+  });
+  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [&](int code, QProcess::ExitStatus st) {
+    const QString out=strip_ansi(QString::fromLocal8Bit(proc.readAll()));
+    if(listing)
+    {
+      listing=false;
+      const QString keep=disks->currentData().toString();
+      disks->clear();
+      for(const QString &line : out.split('\n'))
+      {
+	const QStringList dev=parse_devices(line);
+	if(!dev.isEmpty() && disks->findData(dev.first())<0)
+	  disks->addItem(line.trimmed(), dev.first());
+      }
+      if(disks->findData(keep)<0 && !keep.isEmpty())
+	disks->addItem(keep, keep);	/* keep an image opened by the user */
+      disks->setCurrentIndex(qMax(0, disks->findData(keep)));
+      if(disks->count()==0)
+	output->setPlainText(out);	/* e.g. "You need to be root to use TestDisk." */
+      setBusy(false, QObject::tr("%n disk(s) found", "", disks->count()));
+      return;
+    }
+    QFile f(logPath);
+    const QString log=f.open(QIODevice::ReadOnly | QIODevice::Text) ? QString::fromLocal8Bit(f.readAll()) : QString();
+    const QString results=results_from_log(log);
+    const bool ok=(st==QProcess::NormalExit && code==0);
+    const bool found=has_partitions(results);
+    output->setPlainText(!results.isEmpty() ? results : !log.isEmpty() ? log : out);
+    if(ok && found && (runningCmd.endsWith(QStringLiteral("analyze")) || runningCmd.endsWith(QStringLiteral("analyze,search"))))
+      lastSearchCmd=runningCmd;
+    QString msg=st==QProcess::CrashExit ? QObject::tr("Stopped") :
+	!ok ? QObject::tr("testdisk failed (exit code %1)").arg(code) :
+	!found ? QObject::tr("Done, no partition found") : QObject::tr("Done");
+    if(isWrite())
+    {
+      invalidate();
+      /* interface_write() logs "write!" only when the table is really written */
+      msg=log.contains(QStringLiteral("\nwrite!\n")) ? QObject::tr("Partition table written") : QObject::tr("Partition table NOT written: %1").arg(msg);
+    }
+    setBusy(false, msg);
+  });
+
+  QObject::connect(refresh, &QPushButton::clicked, listDisks);
+  QObject::connect(openImg, &QPushButton::clicked, [&]() {
+    const QString file=QFileDialog::getOpenFileName(&win, QObject::tr("Open disk image"), QString(),
+	QObject::tr("Disk images (*.dd *.img *.raw *.e01 *.E01);;All files (*)"));
+    if(file.isEmpty())
+      return;
+    if(disks->findData(file)<0)
+      disks->addItem(file, file);
+    disks->setCurrentIndex(disks->findData(file));
+    setBusy(false, QString());
+  });
+  QObject::connect(disks, QOverload<int>::of(&QComboBox::currentIndexChanged), invalidate);
+  QObject::connect(arch, QOverload<int>::of(&QComboBox::currentIndexChanged), invalidate);
+  QObject::connect(quick, &QPushButton::clicked, [&]() { runCmd(QStringLiteral("analyze")); });
+  QObject::connect(deeper, &QPushButton::clicked, [&]() { runCmd(QStringLiteral("analyze,search")); });
+  QObject::connect(stop, &QPushButton::clicked, [&]() { proc.kill(); });
+  QObject::connect(write, &QPushButton::clicked, [&]() {
+    const QString dev=disks->currentData().toString();
+    if(QMessageBox::warning(&win, QObject::tr("Write partition table"),
+	  QObject::tr("TestDisk will repeat the last search and write the partitions it finds to\n%1\n\n"
+	    "The current partition table will be overwritten. Partition statuses are the ones TestDisk guessed; "
+	    "use the text-mode testdisk if you need to change them.\n\nContinue?").arg(dev),
+	  QMessageBox::Yes | QMessageBox::No, QMessageBox::No)!=QMessageBox::Yes)
+      return;
+    const QString a=arch->currentData().toString();
+    const QString search=lastSearchCmd.mid(a.isEmpty() ? 0 : a.size()+1);	/* runCmd re-adds the arch prefix */
+    runCmd(search + QStringLiteral(",noconfirm,write"));
+  });
+
+  win.show();
+  listDisks();
+  const int res=app.exec();
+  if(proc.state()!=QProcess::NotRunning)
+  {
+    if(!isWrite())
+      proc.kill();
+    proc.waitForFinished(-1);	/* a write is left to complete after the window closes */
+  }
+  return res;
+}
