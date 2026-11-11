@@ -43,15 +43,24 @@
 #include <QTemporaryDir>
 #include <QVBoxLayout>
 #include <QWidget>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 
-/* "testdisk /list" prints one "Disk <device> - <size> - ..." line per disk */
+/* "testdisk /list" prints "Disk <device> - <size> - ..." per disk, or "Drive X: - ..." for
+   the Windows device \\.\X: (see file_win32_description()), then repeats it above the partitions */
 static QStringList parse_devices(const QString &out)
 {
   QStringList devices;
-  static const QRegularExpression re(QStringLiteral("^Disk (.+?) - "), QRegularExpression::MultilineOption);
+  static const QRegularExpression re(QStringLiteral("^(Disk|Drive) (.+?) - "), QRegularExpression::MultilineOption);
   QRegularExpressionMatchIterator it=re.globalMatch(out);
   while(it.hasNext())
-    devices << it.next().captured(1);
+  {
+    const QRegularExpressionMatch m=it.next();
+    const QString dev=(m.captured(1)==QLatin1String("Drive") ? QStringLiteral("\\\\.\\") : QString()) + m.captured(2);
+    if(!devices.contains(dev))
+      devices << dev;
+  }
   return devices;
 }
 
@@ -78,8 +87,9 @@ static void self_test()
 {
   const QStringList d=parse_devices(QStringLiteral(
 	"TestDisk 7.3\nDisk /dev/sda - 500 GB / 465 GiB - CHS 60801 255 63\nSector size:512\n"
-	"Disk \\\\.\\PhysicalDrive1 - 8 GB / 7 GiB\nDisk image.dd - 10 MB / 9 MiB\n"));
-  assert(d==QStringList({"/dev/sda", "\\\\.\\PhysicalDrive1", "image.dd"}));
+	"Disk \\\\.\\PhysicalDrive1 - 8 GB / 7 GiB\nDrive G: - 524 MB / 500 MiB - CHS 16000 2 32\n"
+	"Disk image.dd - 10 MB / 9 MiB\n\nDisk /dev/sda - 500 GB / 465 GiB - CHS 60801 255 63\n     Partition\n"));
+  assert(d==QStringList({"/dev/sda", "\\\\.\\PhysicalDrive1", "\\\\.\\G:", "image.dd"}));
   assert(results_from_log("x\nResults\nold\nResults\n 1 P FAT32\n")=="Results\n 1 P FAT32\n");
   assert(results_from_log("no partition").isEmpty());
   assert(has_partitions("Results\n   * FAT32  0 32 33  6 95 25  100352 [LOSTPART]\n\nHint"));
@@ -153,15 +163,18 @@ int main(int argc, char *argv[])
   win.resize(900, 600);
 
   QProcess proc;
+#ifndef Q_OS_WIN
   {
     QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
-    /* testdisk starts ncurses even with /cmd: give it a terminal type and a size large enough not to block on "enlarge the terminal" */
+    /* testdisk starts ncurses even with /cmd: give it a terminal type and a size large enough not to block on "enlarge the terminal".
+       Not on Windows: testdisk gets a real console there, and PDCurses rejects LINES > 45 */
     if(env.value(QStringLiteral("TERM")).isEmpty())
       env.insert(QStringLiteral("TERM"), QStringLiteral("xterm"));
     env.insert(QStringLiteral("LINES"), QStringLiteral("50"));
     env.insert(QStringLiteral("COLUMNS"), QStringLiteral("120"));
     proc.setProcessEnvironment(env);
   }
+#endif
   bool listing=false;
   QString runningCmd, lastSearchCmd;
 
@@ -176,9 +189,25 @@ int main(int argc, char *argv[])
   auto start=[&](const QStringList &args) {
     if(td.isEmpty())
     {
+      listing=false;
+      runningCmd.clear();
+      setBusy(false, QObject::tr("testdisk not found"));
       QMessageBox::critical(&win, win.windowTitle(), QObject::tr("The testdisk program was not found next to qtestdisk or in PATH."));
       return;
     }
+#ifdef Q_OS_WIN
+    /* PDCurses exits with "Redirection is not supported." when stdout is a pipe:
+       give "testdisk /cmd" its own hidden console, results are read from the log */
+    if(listing)
+      proc.setCreateProcessArgumentsModifier({});
+    else
+      proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *a) {
+	a->flags|=CREATE_NEW_CONSOLE;
+	a->startupInfo->dwFlags&=~STARTF_USESTDHANDLES;
+	a->startupInfo->dwFlags|=STARTF_USESHOWWINDOW;
+	a->startupInfo->wShowWindow=SW_HIDE;
+      });
+#endif
     proc.start(td, args);
     proc.closeWriteChannel();	/* any unexpected prompt reads EOF instead of hanging */
   };
@@ -215,7 +244,7 @@ int main(int argc, char *argv[])
       for(const QString &line : out.split('\n'))
       {
 	const QStringList dev=parse_devices(line);
-	if(!dev.isEmpty())
+	if(!dev.isEmpty() && disks->findData(dev.first())<0)
 	  disks->addItem(line.trimmed(), dev.first());
       }
       if(disks->findData(keep)<0 && !keep.isEmpty())
@@ -227,7 +256,7 @@ int main(int argc, char *argv[])
       return;
     }
     QFile f(logPath);
-    const QString log=f.open(QIODevice::ReadOnly) ? QString::fromLocal8Bit(f.readAll()) : QString();
+    const QString log=f.open(QIODevice::ReadOnly | QIODevice::Text) ? QString::fromLocal8Bit(f.readAll()) : QString();
     const QString results=results_from_log(log);
     const bool ok=(st==QProcess::NormalExit && code==0);
     const bool found=has_partitions(results);
