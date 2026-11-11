@@ -68,6 +68,7 @@ Group:		Applications/System
 QPhotoRec is a Qt version of PhotoRec. It is a signature based file recovery
 utility. It handles more than 440 file formats including JPG, MSOffice,
 OpenOffice documents.
+QTestDisk is a Qt front-end for TestDisk to find and recover lost partitions.
 
 %endif
 
@@ -89,6 +90,7 @@ make DESTDIR="%{buildroot}" install
 %if  0%{?rhel} != 5
 %check
 desktop-file-validate %{buildroot}/%{_datadir}/applications/qphotorec.desktop
+desktop-file-validate %{buildroot}/%{_datadir}/applications/qtestdisk.desktop
 
 %post -n qphotorec
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
@@ -132,8 +134,10 @@ fi
 %attr(755,root,root) %{_bindir}/qphotorec
 %attr(755,root,root) %{_bindir}/qtestdisk
 %{_mandir}/man8/qphotorec.8*
+%{_mandir}/man8/qtestdisk.8*
 %{_mandir}/zh_CN/man8/qphotorec.8*
 %{_datadir}/applications/qphotorec.desktop
+%{_datadir}/applications/qtestdisk.desktop
 %{_datadir}/icons/hicolor/48x48/apps/qphotorec.png
 %{_datadir}/icons/hicolor/scalable/apps/qphotorec.svg
 %endif

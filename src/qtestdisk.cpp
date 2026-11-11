@@ -2,6 +2,8 @@
 
     File: qtestdisk.cpp
 
+    Copyright (C) 2026 Maysara Mohamed
+
     Qt front-end for TestDisk: runs "testdisk /cmd" and shows the results
     from its log, so the partition recovery logic stays in testdisk itself.
 
@@ -21,6 +23,9 @@
 
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <cassert>
 #include <QApplication>
 #include <QComboBox>
@@ -94,7 +99,7 @@ int main(int argc, char *argv[])
   const QString logPath=tmp.filePath(QStringLiteral("testdisk.log"));
 
   QWidget win;
-  win.setWindowTitle(QStringLiteral("QTestDisk"));
+  win.setWindowTitle(QStringLiteral("QTestDisk " VERSION));
   auto *disks=new QComboBox;
   disks->setMinimumContentsLength(30);
   auto *refresh=new QPushButton(QObject::tr("Refresh"));
@@ -151,12 +156,13 @@ int main(int argc, char *argv[])
   bool listing=false;
   QString runningCmd, lastSearchCmd;
 
+  auto isWrite=[&]() { return runningCmd.endsWith(QStringLiteral(",write")); };
   auto setBusy=[&](bool busy, const QString &msg) {
     status->setText(msg);
     for(QWidget *w : {(QWidget*)disks, (QWidget*)refresh, (QWidget*)openImg, (QWidget*)arch, (QWidget*)quick, (QWidget*)deeper})
       w->setEnabled(!busy && (w==refresh || w==openImg || w==arch || w==disks || disks->count()>0));
     write->setEnabled(!busy && !lastSearchCmd.isEmpty());
-    stop->setEnabled(busy);
+    stop->setEnabled(busy && !isWrite());	/* never interrupt a partition table write */
   };
   auto start=[&](const QStringList &args) {
     if(td.isEmpty())
@@ -169,6 +175,7 @@ int main(int argc, char *argv[])
   };
   auto listDisks=[&]() {
     listing=true;
+    runningCmd.clear();
     setBusy(true, QObject::tr("Looking for disks..."));
     start({QStringLiteral("/list")});
   };
@@ -217,9 +224,10 @@ int main(int argc, char *argv[])
     output->setPlainText(!results.isEmpty() ? results : !log.isEmpty() ? log : out);
     if(ok && (runningCmd.endsWith(QStringLiteral("analyze")) || runningCmd.endsWith(QStringLiteral("analyze,search"))))
       lastSearchCmd=runningCmd;
-    if(runningCmd.endsWith(QStringLiteral(",write")))
+    if(isWrite())
       invalidate();
-    setBusy(false, !ok ? QObject::tr("testdisk stopped (exit code %1)").arg(code) :
+    setBusy(false, st==QProcess::CrashExit ? QObject::tr("Stopped") :
+	!ok ? QObject::tr("testdisk failed (exit code %1)").arg(code) :
 	results.isEmpty() ? QObject::tr("Done, no partition found") : QObject::tr("Done"));
   });
 
@@ -257,8 +265,9 @@ int main(int argc, char *argv[])
   const int res=app.exec();
   if(proc.state()!=QProcess::NotRunning)
   {
-    proc.kill();
-    proc.waitForFinished();
+    if(!isWrite())
+      proc.kill();
+    proc.waitForFinished(-1);	/* a write is left to complete after the window closes */
   }
   return res;
 }

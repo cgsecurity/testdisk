@@ -140,12 +140,14 @@ rm -rf $RPM_BUILD_ROOT
 %{mingw32_mandir}/man8/*-fidentify.8*
 %{mingw32_mandir}/man8/*-photorec.8*
 %{mingw32_mandir}/man8/*-qphotorec.8*
+%{mingw32_mandir}/man8/*-qtestdisk.8*
 %{mingw32_mandir}/man8/*-testdisk.8*
 %{mingw32_mandir}/zh_CN/man8/*-fidentify.8*
 %{mingw32_mandir}/zh_CN/man8/*-photorec.8*
 %{mingw32_mandir}/zh_CN/man8/*-qphotorec.8*
 %{mingw32_mandir}/zh_CN/man8/*-testdisk.8*
 %{mingw32_datadir}/applications/qphotorec.desktop
+%{mingw32_datadir}/applications/qtestdisk.desktop
 %{mingw32_datadir}/icons/hicolor/48x48/apps/qphotorec.png
 %{mingw32_datadir}/icons/hicolor/scalable/apps/qphotorec.svg
 %attr(755,root,root) %{mingw32_bindir}/*-fidentify.exe
@@ -164,12 +166,14 @@ rm -rf $RPM_BUILD_ROOT
 %{mingw64_mandir}/man8/*-fidentify.8*
 %{mingw64_mandir}/man8/*-photorec.8*
 %{mingw64_mandir}/man8/*-qphotorec.8*
+%{mingw64_mandir}/man8/*-qtestdisk.8*
 %{mingw64_mandir}/man8/*-testdisk.8*
 %{mingw64_mandir}/zh_CN/man8/*-fidentify.8*
 %{mingw64_mandir}/zh_CN/man8/*-photorec.8*
 %{mingw64_mandir}/zh_CN/man8/*-qphotorec.8*
 %{mingw64_mandir}/zh_CN/man8/*-testdisk.8*
 %{mingw64_datadir}/applications/qphotorec.desktop
+%{mingw64_datadir}/applications/qtestdisk.desktop
 %{mingw64_datadir}/icons/hicolor/48x48/apps/qphotorec.png
 %{mingw64_datadir}/icons/hicolor/scalable/apps/qphotorec.svg
 %attr(755,root,root) %{mingw64_bindir}/*-fidentify.exe
