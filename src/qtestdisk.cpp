@@ -62,6 +62,12 @@ static QString results_from_log(const QString &log)
   return pos<0 ? QString() : log.mid(pos+1);
 }
 
+/* log_partition() lines follow "Results" directly; an empty line means nothing was found */
+static bool has_partitions(const QString &results)
+{
+  return results.startsWith(QStringLiteral("Results\n")) && results.size()>8 && results.at(8)!='\n';
+}
+
 static QString strip_ansi(QString s)
 {
   static const QRegularExpression re(QStringLiteral("\x1b\\[[0-9;?]*[A-Za-z]|\x1b[()][0-9A-Za-z]|\x1b[=>]"));
@@ -76,6 +82,9 @@ static void self_test()
   assert(d==QStringList({"/dev/sda", "\\\\.\\PhysicalDrive1", "image.dd"}));
   assert(results_from_log("x\nResults\nold\nResults\n 1 P FAT32\n")=="Results\n 1 P FAT32\n");
   assert(results_from_log("no partition").isEmpty());
+  assert(has_partitions("Results\n   * FAT32  0 32 33  6 95 25  100352 [LOSTPART]\n\nHint"));
+  assert(!has_partitions("Results\n\ninterface_write()\n"));
+  assert(!has_partitions(QString()));
   assert(strip_ansi("\x1b[1;1H\x1b[?25lDisk")=="Disk");
   (void)d;
 }
@@ -221,14 +230,20 @@ int main(int argc, char *argv[])
     const QString log=f.open(QIODevice::ReadOnly) ? QString::fromLocal8Bit(f.readAll()) : QString();
     const QString results=results_from_log(log);
     const bool ok=(st==QProcess::NormalExit && code==0);
+    const bool found=has_partitions(results);
     output->setPlainText(!results.isEmpty() ? results : !log.isEmpty() ? log : out);
-    if(ok && (runningCmd.endsWith(QStringLiteral("analyze")) || runningCmd.endsWith(QStringLiteral("analyze,search"))))
+    if(ok && found && (runningCmd.endsWith(QStringLiteral("analyze")) || runningCmd.endsWith(QStringLiteral("analyze,search"))))
       lastSearchCmd=runningCmd;
-    if(isWrite())
-      invalidate();
-    setBusy(false, st==QProcess::CrashExit ? QObject::tr("Stopped") :
+    QString msg=st==QProcess::CrashExit ? QObject::tr("Stopped") :
 	!ok ? QObject::tr("testdisk failed (exit code %1)").arg(code) :
-	results.isEmpty() ? QObject::tr("Done, no partition found") : QObject::tr("Done"));
+	!found ? QObject::tr("Done, no partition found") : QObject::tr("Done");
+    if(isWrite())
+    {
+      invalidate();
+      /* interface_write() logs "write!" only when the table is really written */
+      msg=log.contains(QStringLiteral("\nwrite!\n")) ? QObject::tr("Partition table written") : QObject::tr("Partition table NOT written: %1").arg(msg);
+    }
+    setBusy(false, msg);
   });
 
   QObject::connect(refresh, &QPushButton::clicked, listDisks);
