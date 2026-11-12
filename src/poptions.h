@@ -33,7 +33,11 @@ extern "C" {
   @ requires \separated(options, current_cmd, *current_cmd);
   @ ensures  valid_read_string(*current_cmd);
   @ */
-void interface_options_photorec_cli(struct ph_options *options, char**current_cmd);
+/* Returns -1 for an invalid image minimum, 0 at the next command. */
+int interface_options_photorec_cli(struct ph_options *options, char**current_cmd);
+
+/* Parse exactly length decimal digits; leave value unchanged on failure. */
+int photorec_parse_image_minimum(const char *text, const size_t length, uint64_t *value);
 
 /*@
   @ requires \valid_read(options);

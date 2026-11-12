@@ -502,9 +502,27 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 }
 
 #ifdef HAVE_NCURSES
+static void image_minimum_ncurses(const char *label, uint64_t *value)
+{
+  char response[22];
+  char current[21];
+  int length;
+  aff_copy(stdscr);
+  mvwprintw(stdscr, 6, 0, "%s (0 disables this minimum)", label);
+  mvwaddstr(stdscr, 7, 0, "Enter a whole decimal number, up to 18446744073709551615.");
+  mvwaddstr(stdscr, 9, 0, "Value: ");
+  snprintf(current, sizeof(current), "%llu", (long long unsigned)*value);
+  length=get_string(stdscr, response, sizeof(response)-1, current);
+  if(length<0)
+    return; /* Enter without editing keeps the current value. */
+  if(length>20 || photorec_parse_image_minimum(response, length, value)<0)
+    display_message("Invalid image minimum. The previous value has been kept.");
+}
+
 void interface_options_photorec_ncurses(struct ph_options *options)
 {
-  unsigned int menu = 5;
+  unsigned int menu = 9;
+  char width_label[64], height_label[64], pixels_label[64], bytes_label[64];
   struct MenuItem menuOptions[]=
   {
     { 'P', NULL, "Check JPG files" },
@@ -512,6 +530,10 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     { 'S',NULL,"Try to skip indirect block"},
     { 'E',NULL,"Provide additional controls"},
     { 'L',NULL,"Low memory"},
+    { 'W',width_label,"Minimum image width in pixels (0 disables)"},
+    { 'H',height_label,"Minimum image height in pixels (0 disables)"},
+    { 'I',pixels_label,"Minimum image width times height (0 disables)"},
+    { 'B',bytes_label,"Minimum recovered image size in bytes (0 disables)"},
     { 'Q',"Quit","Return to main menu"},
     { 0, NULL, NULL }
   };
@@ -535,8 +557,12 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     menuOptions[2].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
     menuOptions[3].name=options->expert?"Expert mode : Yes":"Expert mode : No";
     menuOptions[4].name=options->lowmem?"Low memory: Yes":"Low memory: No";
+    snprintf(width_label, sizeof(width_label), "Image minimum width : %llu", (long long unsigned)options->image_min_width);
+    snprintf(height_label, sizeof(height_label), "Image minimum height : %llu", (long long unsigned)options->image_min_height);
+    snprintf(pixels_label, sizeof(pixels_label), "Image minimum pixels : %llu", (long long unsigned)options->image_min_pixels);
+    snprintf(bytes_label, sizeof(bytes_label), "Image minimum bytes : %llu", (long long unsigned)options->image_min_bytes);
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELWHIBQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'p':
@@ -562,6 +588,22 @@ void interface_options_photorec_ncurses(struct ph_options *options)
       case 'L':
 	options->lowmem=!options->lowmem;
 	break;
+      case 'w':
+      case 'W':
+        image_minimum_ncurses("Minimum image width in pixels", &options->image_min_width);
+        break;
+      case 'h':
+      case 'H':
+        image_minimum_ncurses("Minimum image height in pixels", &options->image_min_height);
+        break;
+      case 'i':
+      case 'I':
+        image_minimum_ncurses("Minimum total image pixels (width times height)", &options->image_min_pixels);
+        break;
+      case 'b':
+      case 'B':
+        image_minimum_ncurses("Minimum image size in bytes", &options->image_min_bytes);
+        break;
       case key_ESC:
       case 'q':
       case 'Q':

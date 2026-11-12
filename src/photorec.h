@@ -43,6 +43,11 @@ struct ph_options
   unsigned int lowmem;
   int verbose;
   file_enable_t *list_file_format;
+  /* Independent image limits; zero disables the corresponding limit. */
+  uint64_t image_min_width;
+  uint64_t image_min_height;
+  uint64_t image_min_pixels;
+  uint64_t image_min_bytes;
 };
 
 struct ph_param

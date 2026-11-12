@@ -201,7 +201,8 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
 #ifndef DISABLED_FOR_FRAMAC
     else if(check_command(&params->cmd_run,"options",7)==0)
     {
-      interface_options_photorec_cli(options, &params->cmd_run);
+      if(interface_options_photorec_cli(options, &params->cmd_run)<0)
+	return -1;
     }
     else if(check_command(&params->cmd_run,"fileopt",7)==0)
     {
