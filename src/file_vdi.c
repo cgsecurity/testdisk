@@ -102,6 +102,8 @@ static int header_check_vdi(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension = file_hint_vdi.extension;
     file_recovery_new->min_filesize = offset_data;
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   fs = (uint64_t)le32(header->blocks_in_image) * le32(header->block_size);
@@ -115,6 +117,8 @@ static int header_check_vdi(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size = fs;
   file_recovery_new->data_check = &data_check_size;
   file_recovery_new->file_check = &file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
