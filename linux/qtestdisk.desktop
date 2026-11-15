@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=QTestDisk
+GenericName=Partition Recovery Utility
+Icon=drive-harddisk
+TryExec=/usr/bin/qtestdisk
+Exec=/usr/bin/qtestdisk
+Terminal=false
+Categories=System;Filesystem;Qt;

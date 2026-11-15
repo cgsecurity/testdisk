@@ -1,0 +1,33 @@
+app                      ICON    DISCARDABLE     "../icons/testdisk.ico"
+
+//CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST MOVEABLE PURE "../win/qtestdisk_win.exe.manifest"
+1 24 "../win/qtestdisk_win.exe.manifest"
+
+1 VERSIONINFO
+FILEVERSION 7, 2, 0, 0
+PRODUCTVERSION 7, 2, 0, 0
+FILEFLAGSMASK 0x3f
+FILEOS 0x4
+FILETYPE 0x1
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName",	"CGSecurity"
+      VALUE "ProductName",	"QTestDisk"
+      VALUE "FileDescription",	"QTestDisk"
+      VALUE "InternalName",	"QTestDisk"
+      VALUE "OriginalFilename", "qtestdisk_win.exe"
+      VALUE "Comments",		"Qt front-end for TestDisk"
+      VALUE "FileVersion",	"7.2"
+      VALUE "ProductVersion",	"7.2"
+      VALUE "LegalCopyright",	"Copyright (C) 1998-2023 Christophe GRENIER, et al."
+    END
+  END
+  BLOCK "VarFileInfo"
+      BEGIN
+      /* Once again -- same meanings -- apparently necessary */
+      VALUE "Translation", 0x0409, 0x04E4
+  END
+END

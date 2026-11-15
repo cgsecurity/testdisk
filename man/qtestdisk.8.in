@@ -1,0 +1,21 @@
+.\" May be distributed under the GNU General Public License
+.TH QTESTDISK 8 @TESTDISKDATE@ "Administration Tools"
+.SH NAME
+qtestdisk \- Qt front-end for TestDisk, find and recover lost partitions
+.SH SYNOPSIS
+.BI "qtestdisk
+.SH DESCRIPTION
+   \fBQTestDisk\fP is a graphical front-end for \fBtestdisk\fP(8). It lists the disks, or opens a disk image, runs the TestDisk Quick Search or Deeper Search and shows the partitions found. After confirmation, it can write the recovered partition table to the disk.
+   QTestDisk runs \fBtestdisk /cmd\fP, so the \fBtestdisk\fP program must be installed next to \fBqtestdisk\fP or in the PATH. Partition statuses cannot be changed from QTestDisk; use \fBtestdisk\fP(8) for this and for the advanced filesystem utilities.
+   For more information on how to use, please visit the wiki pages on www.cgsecurity.org
+.SH SEE ALSO
+.BR testdisk (8),
+.BR qphotorec (8),
+.BR fdisk (8).
+.BR
+.SH AUTHOR
+QTestDisk @VERSION@, Data Recovery Utility, @TESTDISKDATE@
+.br
+Christophe GRENIER <grenier@cgsecurity.org>
+.br
+https://www.cgsecurity.org
