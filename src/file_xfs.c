@@ -65,6 +65,8 @@ static int header_check_xfs_sb(const unsigned char *buffer, const unsigned int b
   file_recovery_new->calculated_file_size = sb_blocksize;
   file_recovery_new->data_check = &data_check_size;
   file_recovery_new->file_check = &file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -92,6 +94,8 @@ static int header_save_xfs(const unsigned char *buffer, const unsigned int buffe
   file_recovery_new->extension = file_hint_xfs.extension;
   file_recovery_new->data_check = &data_check_stopasap;
   file_recovery_new->min_filesize = 512;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -151,6 +155,8 @@ static int header_check_xfs_inode(const unsigned char *buffer, const unsigned in
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension = file_hint_xfs.extension;
   file_recovery_new->data_check = &data_check_stopasap;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

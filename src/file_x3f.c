@@ -82,6 +82,8 @@ static int header_check_x3f(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension = file_hint_x3f.extension;
   file_recovery_new->min_filesize = 1024;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

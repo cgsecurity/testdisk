@@ -63,6 +63,7 @@ struct xm_hdr
 static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
 {
   /*@
+    @ loop invariant \valid(fr->handle);
     @ loop assigns *fr->handle, errno, fr->file_size;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns patterns;
@@ -121,6 +122,7 @@ static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
 static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
 {
   /*@
+    @ loop invariant \valid(fr->handle);
     @ loop assigns *fr->handle, errno, fr->file_size;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns instrs;
@@ -276,6 +278,8 @@ static int header_check_xm(const unsigned char *buffer, const unsigned int buffe
   file_recovery_new->extension = file_hint_xm.extension;
   file_recovery_new->min_filesize = 336 + 29; /* Header + 1 instrument */
   file_recovery_new->file_check = &file_check_xm;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

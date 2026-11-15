@@ -128,6 +128,8 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension = file_hint_xml.extension;
   file_recovery_new->min_filesize = 512;
   file_recovery_new->file_rename = &file_rename_xml;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

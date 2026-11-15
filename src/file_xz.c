@@ -68,6 +68,8 @@ static int header_check_xz(const unsigned char *buffer, const unsigned int buffe
   file_recovery_new->extension = file_hint_xz.extension;
   file_recovery_new->file_check = &file_check_xz;
   file_recovery_new->min_filesize = 9;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

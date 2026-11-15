@@ -83,6 +83,8 @@ static int header_check_xar(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension = file_hint_xar.extension;
   file_recovery_new->min_filesize = (uint64_t)hdr_size + size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
