@@ -354,6 +354,49 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 #endif
           json_log_progress(params, params->pass, offset);
 	  params->offset=offset;
+	  if(ind_stop==PSTATUS_SKIP)
+	  {
+	    const uint64_t skip_bytes=params->partition->part_size/20;
+	    const uint64_t target=offset+skip_bytes;
+	    const uint64_t sector_size=params->disk->sector_size;
+#ifdef HAVE_NCURSES
+	    if(ask_confirmation("Skip ahead 5%% from sector %llu to ~%llu? (Y/N)",
+		(unsigned long long)((offset-params->partition->part_offset)/sector_size),
+		(unsigned long long)((target-params->partition->part_offset)/sector_size))==0)
+	    {
+	      ind_stop=PSTATUS_OK;
+	    }
+	    else
+#endif
+	    {
+	      alloc_data_t *sp;
+	      const uint64_t from_sector=(offset-params->partition->part_offset)/sector_size;
+	      current_search_space=list_search_space;
+	      td_list_for_each_entry(sp, &list_search_space->list, list)
+	      {
+		if(sp->end>=target)
+		{
+		  const uint64_t aligned=(target/blocksize)*blocksize;
+		  current_search_space=sp;
+		  offset=(aligned>=sp->start)?aligned:sp->start;
+		  break;
+		}
+	      }
+	      log_info("User skipped from sector %llu to sector %llu\n",
+		  (unsigned long long)from_sector,
+		  (unsigned long long)((offset-params->partition->part_offset)/sector_size));
+	      file_recovery_aborted(&file_recovery, params, list_search_space);
+	      reset_file_recovery(&file_recovery);
+	      file_recovery.blocksize=blocksize;
+	      back=0;
+	      memset(buffer_start,0,blocksize);
+	      buffer_olddata=buffer_start;
+	      buffer=buffer_olddata+blocksize;
+	      params->disk->pread(params->disk, buffer, READ_SIZE, offset);
+	      params->offset=offset;
+	      ind_stop=PSTATUS_OK;
+	    }
+	  }
 	  if(need_to_stop!=0 || ind_stop!=PSTATUS_OK)
 	  {
 #ifndef DISABLED_FOR_FRAMAC
