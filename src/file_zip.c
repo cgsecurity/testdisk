@@ -1421,6 +1421,8 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=file_hint_zip.extension;
     file_recovery_new->file_rename=&file_rename_zip;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -1439,6 +1441,7 @@ static int header_check_winzip(const unsigned char *buffer, const unsigned int b
   reset_file_recovery(file_recovery_new);
   file_recovery_new->file_check=&file_check_zip;
   file_recovery_new->extension=file_hint_zip.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
   /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
