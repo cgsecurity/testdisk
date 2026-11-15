@@ -80,7 +80,13 @@ static void file_check_x4a(file_recovery_t *fr)
     if(tmp > fs)
       fs = tmp;
   }
-  fr->file_size = (uint64_t)fs + 32;
+  if(my_fseek(fr->handle, fs, SEEK_SET) < 0 || fread(&buffer, sizeof(struct x4a_catalog), 1, fr->handle) != 1)
+    return;
+  {
+    const struct x4a_catalog *p = (const struct x4a_catalog *)buffer;
+    const unsigned int tmp = be32(p->size);
+    fr->file_size = (uint64_t)fs + tmp;
+  }
 }
 
 /*@
@@ -107,6 +113,8 @@ static int header_check_ysfc100(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension = file_hint_x4a.extension;
   file_recovery_new->min_filesize = 0x200;
   file_recovery_new->file_check = &file_check_x4a;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
