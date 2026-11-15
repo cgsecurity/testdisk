@@ -129,10 +129,14 @@ static int header_check_wv(const unsigned char *buffer, const unsigned int buffe
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension = file_hint_wv.extension;
   file_recovery_new->min_filesize = (uint64_t)ckSize + 8;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   if(file_recovery_new->blocksize < 8)
     return 1;
   file_recovery_new->data_check = &data_check_wv;
   file_recovery_new->file_check = &file_check_size;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
