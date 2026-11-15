@@ -98,6 +98,8 @@ static int header_check_vmdk3(const unsigned char *buffer, const unsigned int bu
   file_recovery_new->extension = file_hint_vmdk.extension;
 #endif
   file_recovery_new->min_filesize = 512;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
