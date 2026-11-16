@@ -31,12 +31,22 @@ compiler:
 before_script:
   - autoreconf -i
 script:
-  - ./configure
+  - ./configure --prefix=/usr
   - make clean
-  - build-wrapper-linux-x86-64 --out-dir bw-output make all
+  - build-wrapper-linux-x86-64 --out-dir bw-output make -j$(nproc) all
   - sonar-scanner
+  - make install DESTDIR=$(readlink -f appdir) ; find appdir/
+  - wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+  - chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+  - export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for naming the file
+  - ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/*.desktop -appimage -qmake=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
 after_success:
-  - sudo make install
+  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - bash upload.sh QPhotoRec*.AppImage*
+branches:
+  except:
+    - # Do not build tags that we create when we upload to GitHub Releases
+    - /^(?i:continuous)/
 cache:
   directories:
     - '$HOME/.sonar/cache'
