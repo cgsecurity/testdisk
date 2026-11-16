@@ -502,6 +502,10 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->location.data=0;
   file_recovery->extension=NULL;
   file_recovery->min_filesize=0;
+  file_recovery->image_min_width=0;
+  file_recovery->image_min_height=0;
+  file_recovery->image_min_pixels=0;
+  file_recovery->image_min_bytes=0;
   file_recovery->calculated_file_size=0;
   file_recovery->data_check=NULL;
   file_recovery->file_check=NULL;

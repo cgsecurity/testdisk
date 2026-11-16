@@ -59,6 +59,7 @@
 #include "dir.h"
 #include "filegen.h"
 #include "photorec.h"
+#include "pimage.h"
 #include "exfatp.h"
 #include "ext2p.h"
 #include "fatp.h"
@@ -670,6 +671,12 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     file_recovery->file_size = params->disk->disk_size;
   if(file_recovery->file_size > params->disk->disk_real_size)
     file_recovery->file_size = params->disk->disk_real_size;
+  if(file_recovery->file_size>0 && photorec_image_reject(file_recovery))
+  {
+    file_recovery->file_size=0;
+    /* A selected minimum is not a fragmentation error to repair. */
+    file_recovery->offset_error=0;
+  }
   if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
       file_recovery->file_size < file_recovery->min_filesize)
   { 

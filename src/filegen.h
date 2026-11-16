@@ -90,6 +90,10 @@ struct file_recovery_struct
   uint64_t file_size;
   const char *extension;
   uint64_t min_filesize;
+  uint64_t image_min_width;
+  uint64_t image_min_height;
+  uint64_t image_min_pixels;
+  uint64_t image_min_bytes;
   uint64_t offset_ok;
   uint64_t offset_error;
   uint64_t extra;	/* extra bytes between offset_ok and offset_error */

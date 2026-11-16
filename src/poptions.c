@@ -34,22 +34,80 @@
 #include "log.h"
 #include "poptions.h"
 
-void interface_options_photorec_cli(struct ph_options *options, char **current_cmd)
+int photorec_parse_image_minimum(const char *text, const size_t length, uint64_t *value)
+{
+  uint64_t result=0;
+  size_t i;
+  if(length==0)
+    return -1;
+  for(i=0; i<length; i++)
+  {
+    unsigned int digit;
+    if(text[i] < '0' || text[i] > '9')
+      return -1;
+    digit=text[i]-'0';
+    if(result > (UINT64_MAX-digit)/10)
+      return -1;
+    result=result*10+digit;
+  }
+  *value=result;
+  return 0;
+}
+
+/* A recognized option must have exactly one comma followed by its value. */
+static int image_minimum_command(char **current_cmd, const char *name, uint64_t *value)
+{
+  const size_t name_length=strlen(name);
+  const char *argument;
+  size_t length;
+  if(strncmp(*current_cmd, name, name_length)!=0)
+    return 0;
+  if((*current_cmd)[name_length]!='\0' && (*current_cmd)[name_length]!=',')
+    return 0;
+  if((*current_cmd)[name_length]!=',')
+    return -1;
+  argument=*current_cmd+name_length+1;
+  length=strcspn(argument, ",");
+  if(photorec_parse_image_minimum(argument, length, value)<0)
+    return -1;
+  *current_cmd+=name_length+1+length;
+  return 1;
+}
+
+int interface_options_photorec_cli(struct ph_options *options, char **current_cmd)
 {
   if(*current_cmd==NULL)
   {
   /*@ assert valid_read_string(*current_cmd); */
-    return ;
+    return 0;
   }
   /*@
     @ loop invariant valid_read_string(*current_cmd);
     @ loop assigns *current_cmd;
     @ loop assigns options->paranoid, options->keep_corrupted_file, options->mode_ext2;
     @ loop assigns options->expert, options->lowmem;
+    @ loop assigns options->image_min_width, options->image_min_height;
+    @ loop assigns options->image_min_pixels, options->image_min_bytes;
     @*/
   while(1)
   {
+    int image_result;
     skip_comma_in_command(current_cmd);
+    image_result=image_minimum_command(current_cmd, "image_min_width", &options->image_min_width);
+    if(image_result==0)
+      image_result=image_minimum_command(current_cmd, "image_min_height", &options->image_min_height);
+    if(image_result==0)
+      image_result=image_minimum_command(current_cmd, "image_min_pixels", &options->image_min_pixels);
+    if(image_result==0)
+      image_result=image_minimum_command(current_cmd, "image_min_bytes", &options->image_min_bytes);
+    if(image_result<0)
+    {
+      log_critical("Invalid image minimum in command line: %s\n", *current_cmd);
+      fprintf(stderr, "Invalid image minimum: expected an unsigned decimal integer from 0 to 18446744073709551615.\n");
+      return -1;
+    }
+    if(image_result>0)
+      continue;
     /* paranoid, longer option first */
     if(check_command(current_cmd,"paranoid_no",11)==0)
     {
@@ -93,7 +151,7 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
       interface_options_photorec_log(options);
 #endif
       /*@ assert valid_read_string(*current_cmd); */
-      return ;
+      return 0;
     }
   }
 }
@@ -108,4 +166,9 @@ void interface_options_photorec_log(const struct ph_options *options)
       options->mode_ext2?"Yes":"No",
       options->expert?"Yes":"No",
       options->lowmem?"Yes":"No");
+  log_info(" Image minimums (0 disables): width=%llu, height=%llu, pixels=%llu, bytes=%llu\n",
+      (long long unsigned)options->image_min_width,
+      (long long unsigned)options->image_min_height,
+      (long long unsigned)options->image_min_pixels,
+      (long long unsigned)options->image_min_bytes);
 }

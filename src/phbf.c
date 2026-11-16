@@ -61,6 +61,7 @@
 #include "lang.h"
 #include "filegen.h"
 #include "photorec.h"
+#include "pimage.h"
 #include "sessionp.h"
 #include "phrecn.h"
 #include "log.h"
@@ -204,6 +205,8 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	    if(file_recovery.file_stat==NULL)
 	    { /* Header found => file found */
 	      file_recovery_cpy(&file_recovery, &file_recovery_new);
+	      photorec_image_prepare(&file_recovery, params, options,
+		  list_search_space, buffer, read_size);
 	    }
 	    else if(file_recovery_new.file_stat->file_hint!=NULL)
 	    {

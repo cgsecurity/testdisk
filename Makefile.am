@@ -2,6 +2,9 @@ SUBDIRS = icons man src
 docdir ?= $(datadir)/doc/$(PACKAGE)
 
 EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_photorec.txt THANKS compile.sh \
+	tests/README.md tests/run_image_options.sh tests/test_image_options.c \
+	tests/test_image_options_cli.py tests/test_image_options_ui.py \
+	tests/test_image_filters.py tests/test_image_filter_parser.py \
 	progsreiserfs-journal.patch progsreiserfs-file-read.patch \
 	darwin/readme_mac_powerpc.txt darwin/readme_mac_intel.txt \
 	documentation.html \
