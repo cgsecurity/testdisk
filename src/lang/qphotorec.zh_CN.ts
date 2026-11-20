@@ -257,11 +257,16 @@ You should have received a copy of the GNU General Public License along with QPh
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="960"/>
+        <source>Search formats</source>
+        <translation>搜索格式</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="965"/>
         <source>&amp;Reset</source>
         <translation>重置(&amp;R)</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="961"/>
+        <location filename="src/qphotorec.cpp" line="966"/>
         <source>Res&amp;tore</source>
         <translation>恢复(&amp;T)</translation>
     </message>
