@@ -44,6 +44,7 @@
 #include "tpartwr.h"
 #include "log.h"
 #include "log_part.h"
+#include "td_json.h"
 #include "fat32.h"
 #include "tntfs.h"
 #include "thfs.h"
@@ -532,7 +533,7 @@ static void search_NTFS_from_backup(disk_t *disk_car, list_part_t *list_part, co
 
 typedef enum { INDSTOP_CONTINUE=0, INDSTOP_STOP=1, INDSTOP_SKIP=2, INDSTOP_QUIT=3, INDSTOP_PLUS=4 } indstop_t;
 
-static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd)
+static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd, int *aborted)
 {
   unsigned char *buffer_disk;
   unsigned char *buffer_disk0;
@@ -976,7 +977,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   if(fast_mode>0)
     search_NTFS_from_backup(disk_car, list_part, verbose, dump_ind, min_location, search_location_max);
   free(partition);
-  if(ind_stop!=INDSTOP_CONTINUE)
+  *aborted=(ind_stop!=INDSTOP_CONTINUE);
+  if(*aborted)
     log_info("Search for partition aborted\n");
   if(list_part_bad!=NULL)
   {
@@ -1484,6 +1486,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t *list_part_org, const
     list_part_t *list_part;
     const list_part_t *element;
     unsigned int menu=0;
+    int aborted;
     if(fast_mode==0)
       menu=4;	/* Search! */
 #ifdef HAVE_NCURSES
@@ -1492,11 +1495,12 @@ int interface_recovery(disk_t *disk_car, const list_part_t *list_part_org, const
     wprintw(stdscr,"%s",disk_car->description(disk_car));
     wmove(stdscr,5,0);
 #endif
-    list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, current_cmd);
+    list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, current_cmd, &aborted);
     warning_geometry(list_part, disk_car, verbose, current_cmd);
     align_structure(list_part, disk_car, align);
 
     disk_car->arch->init_structure(disk_car,list_part,verbose);
+    td_json_search(disk_car, list_part, fast_mode>0, aborted);
     if(verbose>0)
     {
 #ifdef TARGET_LINUX

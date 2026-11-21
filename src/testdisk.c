@@ -70,6 +70,7 @@
 #include "misc.h"
 #include "tdisksel.h"
 #include "tlog.h"
+#include "td_json.h"
 #include "autoset.h"
 #include "hidden.h"
 
@@ -105,9 +106,11 @@ static void display_help(void)
   printf("\n" \
       "Usage: testdisk [/log] [/debug] [file.dd|file.e01|device]\n"\
       "       testdisk /list  [/log]   [file.dd|file.e01|device]\n" \
+      "       testdisk /logjson file.jsonl /cmd <file|device> analyze[,search]\n" \
       "       testdisk /version\n" \
       "\n" \
       "/log          : create a testdisk.log file\n" \
+      "/logjson <file> : write partition search results to a new JSON Lines file\n" \
       "/debug        : add debug information\n" \
       "/list         : display current partitions\n" \
       "\n" \
@@ -239,6 +242,7 @@ int main( int argc, char **argv )
   const char *cmd_device=NULL;
   char *cmd_run=NULL;
   const char *logfile="testdisk.log";
+  const char *json_logfile=NULL;
   int log_opened=0;
   int log_errno=0;
   if(argc <= 0)
@@ -275,6 +279,17 @@ int main( int argc, char **argv )
 	return 1;
       }
       logfile=argv[++i];
+    }
+    else if(strcmp(argv[i],"/logjson")==0 || strcmp(argv[i],"-logjson")==0)
+    {
+      if(i+1>=argc)
+      {
+	fprintf(stderr,"TestDisk: /logjson requires an output filename.\n");
+	delete_list_disk(list_disk);
+	log_close();
+	return 1;
+      }
+      json_logfile=argv[++i];
     }
     else if((strcmp(argv[i],"/nolog")==0) ||(strcmp(argv[i],"-nolog")==0))
     {
@@ -365,6 +380,23 @@ int main( int argc, char **argv )
       list_disk=insert_new_disk(list_disk,disk_car);
     }
   }
+  if(json_logfile!=NULL)
+  {
+    if(cmd_run==NULL || do_list!=0)
+    {
+      fprintf(stderr,"TestDisk: /logjson requires /cmd with a partition search.\n");
+      delete_list_disk(list_disk);
+      log_close();
+      return 1;
+    }
+    if(td_json_open(json_logfile)!=0)
+    {
+      fprintf(stderr,"TestDisk: Cannot create JSON log %s: %s\n",json_logfile,strerror(errno));
+      delete_list_disk(list_disk);
+      log_close();
+      return 1;
+    }
+  }
   screen_buffer_reset();
   if(do_list!=0)
   {
@@ -391,6 +423,7 @@ int main( int argc, char **argv )
   /* ncurses need locale for correct unicode support */
   if(start_ncurses("TestDisk",argv[0]))
   {
+    td_json_close();
     log_close();
     return 1;
   }
@@ -526,5 +559,10 @@ int main( int argc, char **argv )
     run_sudo(argc, argv, create_log);
   }
 #endif
+  if(td_json_close()!=0)
+  {
+    fprintf(stderr,"TestDisk: Could not finish writing JSON log %s.\n",json_logfile);
+    return 1;
+  }
   return 0;
 }
