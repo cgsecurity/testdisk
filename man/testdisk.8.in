@@ -8,6 +8,8 @@ testdisk \- Scan and repair disk partitions
 .BI "testdisk /version
 .sp
 .BI "testdisk /list [/log]
+.sp
+.B testdisk /logjson results.jsonl /cmd image.dd analyze,search
 .SH DESCRIPTION
    \fBTestDisk\fP checks and recovers lost partitions
    It works with :
@@ -43,6 +45,27 @@ testdisk \- Scan and repair disk partitions
 .TP
 .B /log
 create a testdisk.log file
+.TP
+.BI "/logjson " file
+Create a new JSON Lines file with partition search results from
+.BR /cmd .
+Use a path that does not already exist.
+Each search pass writes one object with
+.BR search " (quick or deeper),"
+.BR aborted " (a boolean),"
+.BR disk_size_bytes ,
+.BR sector_size_bytes ,
+.BR partition_table ,
+and a
+.B partitions
+array that is empty if no partitions were found.
+Each partition contains
+.BR offset_bytes ,
+.BR size_bytes ,
+.B status
+(the TestDisk status character), and
+.B type
+(the partition type name or null if unknown).
 .TP
 .B /debug
 add debug information
